@@ -1,0 +1,16 @@
+package com.rootlink.mystoremanager.data.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import com.rootlink.mystoremanager.data.entity.OldBatteryEntity
+
+@Dao
+interface OldBatteryDao {
+
+    @Insert
+    suspend fun insert(oldBattery: OldBatteryEntity)
+
+    @Query("SELECT * FROM old_batteries WHERE saleId = :saleId")
+    suspend fun getBySaleId(saleId: Long): OldBatteryEntity?
+}
