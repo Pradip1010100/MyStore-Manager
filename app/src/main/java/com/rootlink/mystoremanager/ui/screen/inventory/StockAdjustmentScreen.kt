@@ -9,7 +9,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.rootlink.mystoremanager.data.entity.enums.StockAdjustmentType
+import com.rootlink.mystoremanager.data.enums.StockAdjustmentType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

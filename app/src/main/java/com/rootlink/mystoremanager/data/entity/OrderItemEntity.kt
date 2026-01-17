@@ -30,6 +30,6 @@ data class OrderItemEntity(
     val orderId: Long,
     val productId: Long,
 
-    val quantity: Double,
+    val quantity: Int,
     val unitPrice: Double
 )

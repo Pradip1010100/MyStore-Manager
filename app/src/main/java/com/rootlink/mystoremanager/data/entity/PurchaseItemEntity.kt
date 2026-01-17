@@ -30,7 +30,7 @@ data class PurchaseItemEntity(
     val purchaseId: Long,
     val productId: Long,
 
-    val quantity: Double,
+    val quantity: Int,
     val unitPrice: Double,
     val lineTotal: Double
 )

@@ -12,7 +12,9 @@ import androidx.navigation.compose.rememberNavController
 import com.rootlink.mystoremanager.ui.navigation.AppNavGraph
 import com.rootlink.mystoremanager.ui.navigation.BottomNavigationBar
 import com.rootlink.mystoremanager.ui.theme.MyStoreManagerTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

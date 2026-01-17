@@ -3,9 +3,13 @@ package com.rootlink.mystoremanager.data.repository
 import androidx.room.Transaction
 import com.rootlink.mystoremanager.data.dao.*
 import com.rootlink.mystoremanager.data.entity.*
-import com.rootlink.mystoremanager.data.entity.enums.*
+import com.rootlink.mystoremanager.data.enums.PaymentMode
+import com.rootlink.mystoremanager.data.enums.TransactionCategory
+import com.rootlink.mystoremanager.data.enums.TransactionReferenceType
+import com.rootlink.mystoremanager.data.enums.TransactionType
+import javax.inject.Inject
 
-class PurchaseRepository(
+class PurchaseRepository @Inject constructor(
     private val purchaseDao: PurchaseDao,
     private val purchaseItemDao: PurchaseItemDao,
     private val stockDao: StockDao,
@@ -48,7 +52,8 @@ class PurchaseRepository(
                     amount = purchase.paidAmount,
                     paymentMode = paymentMode,
                     referenceId = purchaseId,
-                    notes = "Purchase payment"
+                    notes = "Purchase payment",
+                    referenceType = TransactionReferenceType.PURCHASE
                 )
             )
         }

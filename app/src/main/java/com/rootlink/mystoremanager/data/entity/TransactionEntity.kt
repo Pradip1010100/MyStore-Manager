@@ -3,9 +3,10 @@ package com.rootlink.mystoremanager.data.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.rootlink.mystoremanager.data.entity.enums.PaymentMode
-import com.rootlink.mystoremanager.data.entity.enums.TransactionCategory
-import com.rootlink.mystoremanager.data.entity.enums.TransactionType
+import com.rootlink.mystoremanager.data.enums.PaymentMode
+import com.rootlink.mystoremanager.data.enums.TransactionCategory
+import com.rootlink.mystoremanager.data.enums.TransactionReferenceType
+import com.rootlink.mystoremanager.data.enums.TransactionType
 
 @Entity(
     tableName = "transactions",
@@ -18,6 +19,7 @@ data class TransactionEntity(
     val category: TransactionCategory,
     val amount: Double,
     val paymentMode: PaymentMode,
+    val referenceType: TransactionReferenceType,
     val referenceId: Long,
     val notes: String?
 )

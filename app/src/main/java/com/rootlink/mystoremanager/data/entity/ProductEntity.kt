@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.rootlink.mystoremanager.data.entity.enums.ProductStatus
+import com.rootlink.mystoremanager.data.enums.ProductStatus
 
 @Entity(
     tableName = "products",

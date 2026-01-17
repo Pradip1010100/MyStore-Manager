@@ -6,9 +6,9 @@ import com.rootlink.mystoremanager.data.dao.StockDao
 import com.rootlink.mystoremanager.data.dao.TransactionDao
 import com.rootlink.mystoremanager.data.dao.WorkerPaymentDao
 import com.rootlink.mystoremanager.data.entity.WorkerPaymentEntity
-import com.rootlink.mystoremanager.data.entity.enums.TransactionCategory
+import javax.inject.Inject
 
-class ReportRepository(
+class ReportRepository @Inject constructor(
     private val saleDao: SaleDao,
     private val purchaseDao: PurchaseDao,
     private val transactionDao: TransactionDao,
@@ -18,10 +18,11 @@ class ReportRepository(
 
     suspend fun getDailySalesTotal(date: Long): Double {
         return 0.0
-//  TODO      return transactionDao.getTotalByCategoryAndDate(
-//            TransactionCategory.SALE,
-//            date
-//        )
+        // TODO:
+        // return transactionDao.getTotalByCategoryAndDate(
+        //     TransactionCategory.SALE,
+        //     date
+        // )
     }
 
     suspend fun getWorkerPayments(
@@ -29,6 +30,7 @@ class ReportRepository(
         to: Long
     ): List<WorkerPaymentEntity> {
         return emptyList()
-        //TODO return workerPaymentDao.getBetween(from, to)
+        // TODO:
+        // return workerPaymentDao.getBetween(from, to)
     }
 }

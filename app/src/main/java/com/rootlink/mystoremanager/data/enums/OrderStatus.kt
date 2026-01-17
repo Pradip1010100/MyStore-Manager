@@ -1,4 +1,4 @@
-package com.rootlink.mystoremanager.data.entity.enums
+package com.rootlink.mystoremanager.data.enums
 
 enum class OrderStatus {
     CREATED,

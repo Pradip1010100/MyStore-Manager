@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -40,9 +41,6 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
-    }
     kapt {
         arguments {
             arg("room.schemaLocation", "$projectDir/schemas")
@@ -55,6 +53,7 @@ dependencies {
     //Room Database Dependency
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.material3)
     kapt(libs.androidx.room.compiler)
 
     //Navigation
@@ -62,6 +61,11 @@ dependencies {
 
     //Material Icons Extended
     implementation(libs.androidx.compose.material.icons.extended)
+
+    //Hilt
+    implementation(libs.com.google.dagger.hilt.android)
+    kapt(libs.com.google.dagger.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

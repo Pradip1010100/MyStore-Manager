@@ -1,6 +1,5 @@
 package com.rootlink.mystoremanager.ui.navigation
 
-import android.R.attr.type
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -14,22 +13,11 @@ import com.rootlink.mystoremanager.ui.screen.accounting.TransactionListScreen
 import com.rootlink.mystoremanager.ui.screen.inventory.ProductListScreen
 import com.rootlink.mystoremanager.ui.screen.inventory.StockAdjustmentScreen
 import com.rootlink.mystoremanager.ui.screen.inventory.StockOverviewScreen
-import com.rootlink.mystoremanager.ui.screen.order.CreateOrderScreen
-import com.rootlink.mystoremanager.ui.screen.order.OrderListScreen
-import com.rootlink.mystoremanager.ui.screen.report.ProfitLossScreen
-import com.rootlink.mystoremanager.ui.screen.report.PurchaseReportScreen
-import com.rootlink.mystoremanager.ui.screen.report.SalesReportScreen
-import com.rootlink.mystoremanager.ui.screen.report.StockReportScreen
-import com.rootlink.mystoremanager.ui.screen.report.WorkerReportScreen
-import com.rootlink.mystoremanager.ui.screen.sales.CreateSaleScreen
-import com.rootlink.mystoremanager.ui.screen.sales.InvoiceViewScreen
-import com.rootlink.mystoremanager.ui.screen.sales.SalesHomeScreen
-import com.rootlink.mystoremanager.ui.screen.supplier.PurchaseEntryScreen
-import com.rootlink.mystoremanager.ui.screen.supplier.SupplierLedgerScreen
-import com.rootlink.mystoremanager.ui.screen.supplier.SupplierListScreen
-import com.rootlink.mystoremanager.ui.screen.worker.WorkerLedgerScreen
-import com.rootlink.mystoremanager.ui.screen.worker.WorkerListScreen
-import com.rootlink.mystoremanager.ui.screen.worker.WorkerPaymentScreen
+import com.rootlink.mystoremanager.ui.screen.report.*
+import com.rootlink.mystoremanager.ui.screen.sales.*
+import com.rootlink.mystoremanager.ui.screen.supplier.*
+import com.rootlink.mystoremanager.ui.screen.worker.*
+import com.rootlink.mystoremanager.ui.viewmodel.*
 
 @Composable
 fun AppNavGraph(
@@ -42,36 +30,66 @@ fun AppNavGraph(
         modifier = modifier
     ) {
 
-        // ---------------- Workers ----------------
+        // ================= WORKERS =================
         navigation(
             startDestination = Routes.WORKER_LIST,
             route = MainRoute.WORKERS.route
         ) {
-
+            //Worker List
             composable(Routes.WORKER_LIST) {
-                WorkerListScreen(navController)
+                WorkerListScreen(
+                    navController = navController
+                )
             }
 
+            //Add Worker
+            composable(Routes.WORKER_ADD) {
+                AddWorkerScreen(navController)
+            }
+
+            //Profile
+            composable(
+                route = Routes.WORKER_PROFILE,
+                arguments = listOf(
+                    navArgument("workerId") {
+                        type = NavType.LongType
+                    }
+                )
+            ) {
+                WorkerProfileScreen(navController)
+            }
+
+            //Attendance
+            composable(Routes.WORKER_ATTENDANCE) {
+                AttendanceScreen(navController)
+            }
+
+            //Payment
             composable(
                 Routes.WORKER_PAYMENT,
                 arguments = listOf(navArgument("workerId") {
                     type = NavType.LongType
                 })
             ) {
-                WorkerPaymentScreen(navController)
+                WorkerPaymentScreen(
+                    navController = navController
+                )
             }
 
+            //Ledger
             composable(
                 Routes.WORKER_LEDGER,
                 arguments = listOf(navArgument("workerId") {
                     type = NavType.LongType
                 })
             ) {
-                WorkerLedgerScreen(navController)
+                WorkerLedgerScreen(
+                    navController = navController
+                )
             }
         }
 
-        // ---------------- Suppliers & Purchase ----------------
+        // ================= SUPPLIERS =================
         navigation(
             startDestination = Routes.SUPPLIER_LIST,
             route = MainRoute.SUPPLIERS.route
@@ -100,26 +118,22 @@ fun AppNavGraph(
             }
         }
 
-        // ---------------- Sales & Orders ----------------
+        // ================= SALES =================
         navigation(
             startDestination = Routes.SALES_HOME,
             route = MainRoute.SALES.route
         ) {
 
             composable(Routes.SALES_HOME) {
-                SalesHomeScreen(navController)
+                SalesHomeScreen(
+                    navController = navController
+                )
             }
 
             composable(Routes.CREATE_SALE) {
-                CreateSaleScreen(navController)
-            }
-
-            composable(Routes.ORDER_LIST) {
-                OrderListScreen(navController)
-            }
-
-            composable(Routes.CREATE_ORDER) {
-                CreateOrderScreen(navController)
+                CreateSaleScreen(
+                    navController = navController
+                )
             }
 
             composable(
@@ -128,11 +142,13 @@ fun AppNavGraph(
                     type = NavType.LongType
                 })
             ) {
-                InvoiceViewScreen(navController)
+                InvoiceViewScreen(
+                    navController = navController
+                )
             }
         }
 
-        // ---------------- Inventory ----------------
+        // ================= INVENTORY =================
         navigation(
             startDestination = Routes.PRODUCT_LIST,
             route = MainRoute.INVENTORY.route
@@ -156,14 +172,16 @@ fun AppNavGraph(
             }
         }
 
-        // ---------------- Accounting ----------------
+        // ================= ACCOUNTING =================
         navigation(
             startDestination = Routes.TRANSACTION_LIST,
             route = MainRoute.ACCOUNTING.route
         ) {
 
             composable(Routes.TRANSACTION_LIST) {
-                TransactionListScreen(navController)
+                TransactionListScreen(
+                    navController = navController
+                )
             }
 
             composable(Routes.DAILY_SUMMARY) {
@@ -171,7 +189,7 @@ fun AppNavGraph(
             }
         }
 
-        // ---------------- Reports ----------------
+        // ================= REPORTS =================
         navigation(
             startDestination = Routes.SALES_REPORT,
             route = MainRoute.REPORTS.route

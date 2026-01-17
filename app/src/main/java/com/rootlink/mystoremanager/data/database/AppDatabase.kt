@@ -9,6 +9,7 @@ import com.rootlink.mystoremanager.data.entity.*
     entities = [
         WorkerEntity::class,
         WorkerPaymentEntity::class,
+        WorkerAttendanceEntity::class,
 
         ProductCategoryEntity::class,
         ProductEntity::class,
@@ -38,6 +39,7 @@ abstract class AppDatabase : RoomDatabase() {
     // ---------- MASTER ----------
     abstract fun workerDao(): WorkerDao
     abstract fun workerPaymentDao(): WorkerPaymentDao
+    abstract fun workerAttendanceDao() : WorkerAttendanceDao
 
     abstract fun productCategoryDao(): ProductCategoryDao
     abstract fun productDao(): ProductDao

@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rootlink.mystoremanager.data.entity.OrderEntity
-import com.rootlink.mystoremanager.data.entity.enums.OrderStatus
+import com.rootlink.mystoremanager.data.enums.OrderStatus
 import com.rootlink.mystoremanager.ui.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)

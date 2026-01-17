@@ -3,9 +3,14 @@ package com.rootlink.mystoremanager.data.repository
 import androidx.room.Transaction
 import com.rootlink.mystoremanager.data.dao.*
 import com.rootlink.mystoremanager.data.entity.*
-import com.rootlink.mystoremanager.data.entity.enums.*
+import com.rootlink.mystoremanager.data.enums.OrderStatus
+import com.rootlink.mystoremanager.data.enums.PaymentMode
+import com.rootlink.mystoremanager.data.enums.TransactionCategory
+import com.rootlink.mystoremanager.data.enums.TransactionReferenceType
+import com.rootlink.mystoremanager.data.enums.TransactionType
+import javax.inject.Inject
 
-class OrderRepository(
+class OrderRepository @Inject constructor(
     private val orderDao: OrderDao,
     private val orderItemDao: OrderItemDao,
     private val saleDao: SaleDao,
@@ -43,7 +48,8 @@ class OrderRepository(
                     amount = order.advanceAmount,
                     paymentMode = paymentMode,
                     referenceId = orderId,
-                    notes = "Order advance"
+                    notes = "Order advance",
+                    referenceType = TransactionReferenceType.SALE
                 )
             )
         }
@@ -96,7 +102,8 @@ class OrderRepository(
                     amount = balanceAmount,
                     paymentMode = paymentMode,
                     referenceId = saleId,
-                    notes = "Order balance payment"
+                    notes = "Order balance payment",
+                    referenceType = TransactionReferenceType.SALE
                 )
             )
         }

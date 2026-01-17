@@ -12,5 +12,5 @@ interface SaleItemDao {
     suspend fun insertAll(items: List<SaleItemEntity>)
 
     @Query("SELECT * FROM sale_items WHERE saleId = :saleId")
-    suspend fun getItems(saleId: Long): List<SaleItemEntity>
+    suspend fun getBySale(saleId: Long): List<SaleItemEntity>
 }

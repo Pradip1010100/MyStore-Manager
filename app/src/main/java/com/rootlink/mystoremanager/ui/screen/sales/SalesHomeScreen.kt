@@ -8,25 +8,34 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rootlink.mystoremanager.data.entity.SaleEntity
 import com.rootlink.mystoremanager.ui.navigation.Routes
+import com.rootlink.mystoremanager.ui.viewmodel.SalesViewModel
+
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SalesHomeScreen(
-    navController: NavController,
-    sales: List<SaleEntity> = emptyList() // temporary
+    navController: NavController
 ) {
+    val viewModel: SalesViewModel = hiltViewModel()
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadSales()
+    }
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Sales") }
-            )
-        },
+        topBar = { TopAppBar(title = { Text("Sales") }) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
@@ -36,34 +45,65 @@ fun SalesHomeScreen(
                 Icon(Icons.Default.Add, contentDescription = "New Sale")
             }
         }
-    ) { paddingValues ->
+    ) { padding ->
 
-        if (sales.isEmpty()) {
-            EmptySalesState(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
-            ) {
-                items(sales) { sale ->
-                    SaleRow(
-                        sale = sale,
-                        onInvoiceClick = {
-                            navController.navigate(
-                                "invoice_view/${sale.saleId}"
-                            )
-                        }
+        when {
+            uiState.isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .padding(padding)
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            uiState.error != null -> {
+                Box(
+                    modifier = Modifier
+                        .padding(padding)
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = uiState.error!!,
+                        color = MaterialTheme.colorScheme.error
                     )
+                }
+            }
+
+            uiState.sales.isEmpty() -> {
+                EmptySalesState(
+                    modifier = Modifier
+                        .padding(padding)
+                        .fillMaxSize()
+                )
+            }
+
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .padding(padding)
+                        .fillMaxSize()
+                ) {
+                    items(uiState.sales) { sale ->
+                        SaleRow(
+                            sale = sale,
+                            onInvoiceClick = {
+                                navController.navigate(
+                                    "invoice_view/${sale.saleId}"
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+
 
 @Composable
 private fun SaleRow(

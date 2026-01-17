@@ -2,7 +2,7 @@ package com.rootlink.mystoremanager.data.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.rootlink.mystoremanager.data.entity.enums.PaymentStatus
+import com.rootlink.mystoremanager.data.enums.PaymentStatus
 
 @Entity(tableName = "sales")
 data class SaleEntity(

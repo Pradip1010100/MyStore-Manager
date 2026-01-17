@@ -4,8 +4,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.rootlink.mystoremanager.data.entity.enums.PaymentType
-import com.rootlink.mystoremanager.data.entity.enums.WorkerPaymentStatus
+import com.rootlink.mystoremanager.data.enums.PaymentType
+import com.rootlink.mystoremanager.data.enums.WorkerPaymentStatus
 
 @Entity(
     tableName = "worker_payments",

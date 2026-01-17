@@ -1,4 +1,4 @@
-package com.rootlink.mystoremanager.ui.screen.model
+package com.rootlink.mystoremanager.ui.viewmodel.state
 
 import com.rootlink.mystoremanager.data.entity.SaleEntity
 import com.rootlink.mystoremanager.data.entity.SaleItemEntity

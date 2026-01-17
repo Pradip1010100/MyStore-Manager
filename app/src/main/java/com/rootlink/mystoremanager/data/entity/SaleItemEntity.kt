@@ -27,7 +27,7 @@ data class SaleItemEntity(
     @PrimaryKey(autoGenerate = true) val saleItemId: Long = 0,
     val saleId: Long,
     val productId: Long,
-    val quantity: Double,
+    val quantity: Int,
     val unitPrice: Double,
     val lineTotal: Double
 )

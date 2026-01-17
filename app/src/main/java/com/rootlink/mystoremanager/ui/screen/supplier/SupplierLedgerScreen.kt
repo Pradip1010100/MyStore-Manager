@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.rootlink.mystoremanager.data.entity.PurchaseEntity
-import com.rootlink.mystoremanager.data.entity.enums.PaymentStatus
+import com.rootlink.mystoremanager.data.enums.PaymentStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

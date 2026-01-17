@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.rootlink.mystoremanager.data.entity.enums.StockAdjustmentType
+import com.rootlink.mystoremanager.data.enums.StockAdjustmentType
 
 @Entity(
     tableName = "stock_adjustments",
@@ -25,7 +25,7 @@ data class StockAdjustmentEntity(
     val productId: Long,
 
     val adjustmentType: StockAdjustmentType, // IN / OUT
-    val quantity: Double,
+    val quantity:Int,
 
     val reason: String,
     val adjustmentDate: Long

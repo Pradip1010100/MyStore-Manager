@@ -15,6 +15,21 @@ interface WorkerPaymentDao {
     @Update
     suspend fun update(payment: WorkerPaymentEntity)
 
+    @Query("""
+    SELECT IFNULL(SUM(amount), 0)
+    FROM worker_payments
+    WHERE workerId = :workerId
+""")
+    suspend fun getTotalPaid(workerId: Long): Double
+
+    @Query("""
+    SELECT * FROM worker_payments
+    WHERE paymentId = :paymentId
+    LIMIT 1
+""")
+    suspend fun getById(paymentId: Long): WorkerPaymentEntity
+
+
     @Query("SELECT * FROM worker_payments WHERE workerId = :workerId")
     suspend fun getByWorker(workerId: Long): List<WorkerPaymentEntity>
 }

@@ -12,8 +12,8 @@ interface SaleDao {
     @Insert
     suspend fun insert(sale: SaleEntity): Long
 
-    @Update
-    suspend fun update(sale: SaleEntity)
+    @Query("SELECT * FROM sales ORDER BY saleDate DESC")
+    suspend fun getAll(): List<SaleEntity>
 
     @Query("SELECT * FROM sales WHERE saleId = :id")
     suspend fun getById(id: Long): SaleEntity

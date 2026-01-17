@@ -19,7 +19,7 @@ interface StockDao {
     """)
     suspend fun updateStock(
         productId: Long,
-        delta: Double,
+        delta: Int,
         time: Long
     )
 

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "eda20658f621ae4f8032aad032ed702e",
+    "identityHash": "173d743f8774c77d6bc698e5e2ac20b8",
     "entities": [
       {
         "tableName": "workers",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`workerId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `phone` TEXT NOT NULL, `salaryType` TEXT NOT NULL, `salaryAmount` REAL NOT NULL, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`workerId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `phone` TEXT, `email` TEXT, `address` TEXT, `profileImageUri` TEXT, `team` TEXT, `position` TEXT, `salaryType` TEXT NOT NULL, `defaultRate` REAL NOT NULL, `salaryAmount` REAL NOT NULL, `status` TEXT NOT NULL, `dob` INTEGER, `joinedAt` INTEGER NOT NULL, `leftAt` INTEGER, `notes` TEXT)",
         "fields": [
           {
             "fieldPath": "workerId",
@@ -23,13 +23,43 @@
           {
             "fieldPath": "phone",
             "columnName": "phone",
-            "affinity": "TEXT",
-            "notNull": true
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "profileImageUri",
+            "columnName": "profileImageUri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "team",
+            "columnName": "team",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "salaryType",
             "columnName": "salaryType",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "defaultRate",
+            "columnName": "defaultRate",
+            "affinity": "REAL",
             "notNull": true
           },
           {
@@ -45,10 +75,25 @@
             "notNull": true
           },
           {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
+            "fieldPath": "dob",
+            "columnName": "dob",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "joinedAt",
+            "columnName": "joinedAt",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "leftAt",
+            "columnName": "leftAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -56,18 +101,7 @@
           "columnNames": [
             "workerId"
           ]
-        },
-        "indices": [
-          {
-            "name": "index_workers_phone",
-            "unique": false,
-            "columnNames": [
-              "phone"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_workers_phone` ON `${TABLE_NAME}` (`phone`)"
-          }
-        ]
+        }
       },
       {
         "tableName": "worker_payments",
@@ -143,6 +177,54 @@
             "referencedColumns": [
               "workerId"
             ]
+          }
+        ]
+      },
+      {
+        "tableName": "worker_attendance",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`attendanceId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `workerId` INTEGER NOT NULL, `date` INTEGER NOT NULL, `status` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "attendanceId",
+            "columnName": "attendanceId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workerId",
+            "columnName": "workerId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "attendanceId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_worker_attendance_workerId_date",
+            "unique": true,
+            "columnNames": [
+              "workerId",
+              "date"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_worker_attendance_workerId_date` ON `${TABLE_NAME}` (`workerId`, `date`)"
           }
         ]
       },
@@ -316,7 +398,7 @@
       },
       {
         "tableName": "stock_adjustments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`adjustmentId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `productId` INTEGER NOT NULL, `adjustmentType` TEXT NOT NULL, `quantity` REAL NOT NULL, `reason` TEXT NOT NULL, `adjustmentDate` INTEGER NOT NULL, FOREIGN KEY(`productId`) REFERENCES `products`(`productId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`adjustmentId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `productId` INTEGER NOT NULL, `adjustmentType` TEXT NOT NULL, `quantity` INTEGER NOT NULL, `reason` TEXT NOT NULL, `adjustmentDate` INTEGER NOT NULL, FOREIGN KEY(`productId`) REFERENCES `products`(`productId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "adjustmentId",
@@ -339,7 +421,7 @@
           {
             "fieldPath": "quantity",
             "columnName": "quantity",
-            "affinity": "REAL",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -545,7 +627,7 @@
       },
       {
         "tableName": "sale_items",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`saleItemId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `saleId` INTEGER NOT NULL, `productId` INTEGER NOT NULL, `quantity` REAL NOT NULL, `unitPrice` REAL NOT NULL, `lineTotal` REAL NOT NULL, FOREIGN KEY(`saleId`) REFERENCES `sales`(`saleId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`productId`) REFERENCES `products`(`productId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`saleItemId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `saleId` INTEGER NOT NULL, `productId` INTEGER NOT NULL, `quantity` INTEGER NOT NULL, `unitPrice` REAL NOT NULL, `lineTotal` REAL NOT NULL, FOREIGN KEY(`saleId`) REFERENCES `sales`(`saleId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`productId`) REFERENCES `products`(`productId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "saleItemId",
@@ -568,7 +650,7 @@
           {
             "fieldPath": "quantity",
             "columnName": "quantity",
-            "affinity": "REAL",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -793,7 +875,7 @@
       },
       {
         "tableName": "purchase_items",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`purchaseItemId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `purchaseId` INTEGER NOT NULL, `productId` INTEGER NOT NULL, `quantity` REAL NOT NULL, `unitPrice` REAL NOT NULL, `lineTotal` REAL NOT NULL, FOREIGN KEY(`purchaseId`) REFERENCES `purchases`(`purchaseId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`productId`) REFERENCES `products`(`productId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`purchaseItemId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `purchaseId` INTEGER NOT NULL, `productId` INTEGER NOT NULL, `quantity` INTEGER NOT NULL, `unitPrice` REAL NOT NULL, `lineTotal` REAL NOT NULL, FOREIGN KEY(`purchaseId`) REFERENCES `purchases`(`purchaseId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`productId`) REFERENCES `products`(`productId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "purchaseItemId",
@@ -816,7 +898,7 @@
           {
             "fieldPath": "quantity",
             "columnName": "quantity",
-            "affinity": "REAL",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -951,7 +1033,7 @@
       },
       {
         "tableName": "order_items",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`orderItemId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `orderId` INTEGER NOT NULL, `productId` INTEGER NOT NULL, `quantity` REAL NOT NULL, `unitPrice` REAL NOT NULL, FOREIGN KEY(`orderId`) REFERENCES `orders`(`orderId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`productId`) REFERENCES `products`(`productId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`orderItemId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `orderId` INTEGER NOT NULL, `productId` INTEGER NOT NULL, `quantity` INTEGER NOT NULL, `unitPrice` REAL NOT NULL, FOREIGN KEY(`orderId`) REFERENCES `orders`(`orderId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`productId`) REFERENCES `products`(`productId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "orderItemId",
@@ -974,7 +1056,7 @@
           {
             "fieldPath": "quantity",
             "columnName": "quantity",
-            "affinity": "REAL",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -1037,7 +1119,7 @@
       },
       {
         "tableName": "transactions",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`transactionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `transactionDate` INTEGER NOT NULL, `transactionType` TEXT NOT NULL, `category` TEXT NOT NULL, `amount` REAL NOT NULL, `paymentMode` TEXT NOT NULL, `referenceId` INTEGER NOT NULL, `notes` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`transactionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `transactionDate` INTEGER NOT NULL, `transactionType` TEXT NOT NULL, `category` TEXT NOT NULL, `amount` REAL NOT NULL, `paymentMode` TEXT NOT NULL, `referenceType` TEXT NOT NULL, `referenceId` INTEGER NOT NULL, `notes` TEXT)",
         "fields": [
           {
             "fieldPath": "transactionId",
@@ -1076,6 +1158,12 @@
             "notNull": true
           },
           {
+            "fieldPath": "referenceType",
+            "columnName": "referenceType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
             "fieldPath": "referenceId",
             "columnName": "referenceId",
             "affinity": "INTEGER",
@@ -1108,7 +1196,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'eda20658f621ae4f8032aad032ed702e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '173d743f8774c77d6bc698e5e2ac20b8')"
     ]
   }
 }
