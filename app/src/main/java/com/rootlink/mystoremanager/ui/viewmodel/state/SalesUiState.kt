@@ -8,5 +8,7 @@ data class SalesUiState(
     val sales: List<SaleEntity> = emptyList(),
     val invoiceItems: List<SaleItemEntity> = emptyList(),
     val selectedSale: SaleEntity? = null,
+    val productNameMap: Map<Long, String> = emptyMap(),
+
     val error: String? = null
 )

@@ -4,13 +4,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -21,6 +20,8 @@ import com.rootlink.mystoremanager.data.enums.TransactionType
 import com.rootlink.mystoremanager.ui.viewmodel.AccountingViewModel
 import com.rootlink.mystoremanager.ui.viewmodel.state.TransactionUiItem
 import com.rootlink.mystoremanager.util.toReadableDateTime
+import java.time.LocalDate
+import java.time.Month
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,35 +31,74 @@ fun TransactionListScreen(
 ) {
     val transactions by viewModel.transactions.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadTodayTransactions()
+    val today = LocalDate.now()
+    var selectedYear by remember { mutableStateOf(today.year) }
+    var selectedMonth by remember { mutableStateOf(today.monthValue) }
+
+    val canGoNext =
+        !(selectedYear == today.year && selectedMonth == today.monthValue)
+
+    LaunchedEffect(selectedYear, selectedMonth) {
+        viewModel.loadTransactionsForMonth(
+            selectedYear,
+            selectedMonth
+        )
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Transactions") }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Transactions") }
+            )
+        }
     ) { paddingValues ->
 
-        if (transactions.isEmpty()) {
-            EmptyTransactionState(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+
+            MonthSelector(
+                year = selectedYear,
+                month = selectedMonth,
+                onPrevious = {
+                    if (selectedMonth == 1) {
+                        selectedMonth = 12
+                        selectedYear--
+                    } else {
+                        selectedMonth--
+                    }
+                },
+                onNext = {
+                    if (selectedMonth == 12) {
+                        selectedMonth = 1
+                        selectedYear++
+                    } else {
+                        selectedMonth++
+                    }
+                },
+                canGoNext = canGoNext
             )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
-            ) {
-                items(transactions) { transaction ->
-                    TransactionRow(transaction)
+
+            Divider()
+
+            if (transactions.isEmpty()) {
+                EmptyTransactionState(
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(transactions) { transaction ->
+                        TransactionRow(transaction)
+                    }
                 }
             }
         }
     }
 }
-
-
 
 @Composable
 private fun TransactionRow(
@@ -87,7 +127,6 @@ private fun TransactionRow(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            /* ---------- TOP ROW ---------- */
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -123,7 +162,6 @@ private fun TransactionRow(
 
             Spacer(Modifier.height(6.dp))
 
-            /* ---------- SUBTITLE ---------- */
             transaction.subtitle?.let {
                 Text(
                     text = it,
@@ -131,7 +169,6 @@ private fun TransactionRow(
                 )
             }
 
-            /* ---------- META ---------- */
             Text(
                 text =
                     "${transaction.paymentMode.name} • " +
@@ -139,7 +176,6 @@ private fun TransactionRow(
                 style = MaterialTheme.typography.bodySmall
             )
 
-            /* ---------- NOTES ---------- */
             transaction.notes?.let {
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -151,7 +187,6 @@ private fun TransactionRow(
         }
     }
 }
-
 
 @Composable
 private fun EmptyTransactionState(
@@ -168,3 +203,43 @@ private fun EmptyTransactionState(
     }
 }
 
+@Composable
+private fun MonthSelector(
+    year: Int,
+    month: Int,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    canGoNext: Boolean
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        IconButton(onClick = onPrevious) {
+            Icon(
+                Icons.Default.ArrowBack,
+                contentDescription = "Previous Month"
+            )
+        }
+
+        Text(
+            text = "${Month.of(month).name} $year",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        IconButton(
+            onClick = onNext,
+            enabled = canGoNext
+        ) {
+            Icon(
+                Icons.Default.ArrowForward,
+                contentDescription = "Next Month"
+            )
+        }
+    }
+}

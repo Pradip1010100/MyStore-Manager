@@ -25,6 +25,37 @@ class AccountingViewModel @Inject constructor(
     val transactions: StateFlow<List<TransactionUiItem>> =
         _transactions.asStateFlow()
 
+    fun loadTransactionsForMonth(
+        year: Int,
+        month: Int // 1 = January, 12 = December
+    ) {
+        viewModelScope.launch {
+
+            val zone = ZoneId.systemDefault()
+
+            val startOfMonth =
+                java.time.LocalDate
+                    .of(year, month, 1)
+                    .atStartOfDay(zone)
+                    .toInstant()
+                    .toEpochMilli()
+
+            val endOfMonth =
+                java.time.LocalDate
+                    .of(year, month, 1)
+                    .plusMonths(1)
+                    .atStartOfDay(zone)
+                    .toInstant()
+                    .toEpochMilli() - 1
+
+            _transactions.value =
+                transactionRepository.getTransactionUiItems(
+                    startOfMonth,
+                    endOfMonth
+                )
+        }
+    }
+
     fun loadTodayTransactions() {
         viewModelScope.launch {
             val todayStart =

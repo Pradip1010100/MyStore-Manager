@@ -1,41 +1,23 @@
 package com.rootlink.mystoremanager.data.repository
 
 import androidx.room.Transaction
-import com.rootlink.mystoremanager.data.dao.OldBatteryDao
-import com.rootlink.mystoremanager.data.dao.SaleDao
-import com.rootlink.mystoremanager.data.dao.SaleItemDao
-import com.rootlink.mystoremanager.data.dao.StockDao
-import com.rootlink.mystoremanager.data.dao.TransactionDao
-import com.rootlink.mystoremanager.data.entity.OldBatteryEntity
-import com.rootlink.mystoremanager.data.entity.SaleEntity
-import com.rootlink.mystoremanager.data.entity.SaleItemEntity
-import com.rootlink.mystoremanager.data.entity.TransactionEntity
-import com.rootlink.mystoremanager.data.enums.PaymentMode
-import com.rootlink.mystoremanager.data.enums.TransactionCategory
-import com.rootlink.mystoremanager.data.enums.TransactionReferenceType
-import com.rootlink.mystoremanager.data.enums.TransactionType
+import com.rootlink.mystoremanager.data.dao.*
+import com.rootlink.mystoremanager.data.entity.*
+import com.rootlink.mystoremanager.data.enums.*
 import javax.inject.Inject
 
 class SalesRepository @Inject constructor(
     private val saleDao: SaleDao,
     private val saleItemDao: SaleItemDao,
     private val stockDao: StockDao,
+    private val stockAdjustmentDao: StockAdjustmentDao,
     private val oldBatteryDao: OldBatteryDao,
     private val transactionDao: TransactionDao
 ) {
 
-    // ---------- READ ----------
-
-    suspend fun getAllSales(): List<SaleEntity> =
-        saleDao.getAll()
-
-    suspend fun getSaleById(id: Long): SaleEntity =
-        saleDao.getById(id)
-
-    suspend fun getSaleItems(saleId: Long): List<SaleItemEntity> =
-        saleItemDao.getBySale(saleId)
-
-    // ---------- WRITE ----------
+    suspend fun getAllSales() = saleDao.getAll()
+    suspend fun getSaleById(id: Long) = saleDao.getById(id)
+    suspend fun getSaleItems(saleId: Long) = saleItemDao.getBySale(saleId)
 
     @Transaction
     suspend fun createSale(
@@ -43,24 +25,51 @@ class SalesRepository @Inject constructor(
         items: List<SaleItemEntity>,
         oldBattery: OldBatteryEntity?
     ) {
+        // 1. STOCK VALIDATION
+        items.forEach {
+            val stock = stockDao.getStock(it.productId)
+                ?: throw IllegalStateException("Stock missing")
+
+            if (stock.quantityOnHand < it.quantity) {
+                throw IllegalArgumentException("Insufficient stock")
+            }
+        }
+
+        // 2. SAVE SALE
         val saleId = saleDao.insert(sale)
 
+        // 3. SAVE ITEMS
         saleItemDao.insertAll(
             items.map { it.copy(saleId = saleId) }
         )
 
+        // 4. UPDATE STOCK + ADJUSTMENT
         items.forEach {
-            stockDao.updateStock(
+            val stock = stockDao.getStock(it.productId)!!
+
+            stockDao.setStock(
                 productId = it.productId,
-                delta = -it.quantity,
+                newQty = stock.quantityOnHand - it.quantity,
                 time = System.currentTimeMillis()
+            )
+
+            stockAdjustmentDao.insert(
+                StockAdjustmentEntity(
+                    productId = it.productId,
+                    adjustmentType = StockAdjustmentType.OUT,
+                    quantity = it.quantity.toDouble(),
+                    reason = "Sale #$saleId",
+                    adjustmentDate = System.currentTimeMillis()
+                )
             )
         }
 
+        // 5. OLD BATTERY
         oldBattery?.let {
             oldBatteryDao.insert(it.copy(saleId = saleId))
         }
 
+        // 6. TRANSACTION
         transactionDao.insert(
             TransactionEntity(
                 transactionDate = System.currentTimeMillis(),
@@ -68,10 +77,11 @@ class SalesRepository @Inject constructor(
                 category = TransactionCategory.SALE,
                 amount = sale.finalAmount,
                 paymentMode = PaymentMode.CASH,
+                referenceType = TransactionReferenceType.SALE,
                 referenceId = saleId,
-                notes = "Sale",
-                referenceType = TransactionReferenceType.SALE
+                notes = "Sale #$saleId"
             )
         )
     }
+
 }

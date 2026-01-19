@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,8 +20,9 @@ import androidx.navigation.NavController
 import com.rootlink.mystoremanager.data.entity.SaleEntity
 import com.rootlink.mystoremanager.ui.navigation.Routes
 import com.rootlink.mystoremanager.ui.viewmodel.SalesViewModel
-
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.rootlink.mystoremanager.util.toReadableDateTime
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,80 +32,54 @@ fun SalesHomeScreen(
     val viewModel: SalesViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadSales()
-    }
+    LaunchedEffect(Unit) { viewModel.loadSales() }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Sales") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Sales") }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    navController.navigate(Routes.CREATE_SALE)
-                }
+                onClick = { navController.navigate(Routes.CREATE_SALE) }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "New Sale")
+                Icon(Icons.Default.Add, contentDescription = "Create Sale")
             }
         }
     ) { padding ->
 
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .padding(padding)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            uiState.error != null -> {
-                Box(
-                    modifier = Modifier
-                        .padding(padding)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = uiState.error!!,
-                        color = MaterialTheme.colorScheme.error
+        if (uiState.sales.isEmpty()) {
+            EmptySalesState(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(horizontal = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(uiState.sales) { sale ->
+                    SaleRow(
+                        sale = sale,
+                        onInvoiceClick = {
+                            navController.navigate(
+                                "invoice_view/${sale.saleId}"
+                            )
+                        }
                     )
-                }
-            }
-
-            uiState.sales.isEmpty() -> {
-                EmptySalesState(
-                    modifier = Modifier
-                        .padding(padding)
-                        .fillMaxSize()
-                )
-            }
-
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .padding(padding)
-                        .fillMaxSize()
-                ) {
-                    items(uiState.sales) { sale ->
-                        SaleRow(
-                            sale = sale,
-                            onInvoiceClick = {
-                                navController.navigate(
-                                    "invoice_view/${sale.saleId}"
-                                )
-                            }
-                        )
-                    }
                 }
             }
         }
     }
 }
 
-
+/* -------------------------------------------------------------------------- */
+/*                                SALE ROW                                    */
+/* -------------------------------------------------------------------------- */
 
 @Composable
 private fun SaleRow(
@@ -111,43 +87,70 @@ private fun SaleRow(
     onInvoiceClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp)
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
 
-            Text(
-                text = "Sale #${sale.saleId}",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Total: ₹${sale.finalAmount}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
+            /* ---- TOP ROW: SALE ID + DATE ---- */
             Row(
-                horizontalArrangement = Arrangement.End,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onInvoiceClick) {
+                Text(
+                    text = "Sale #${sale.saleId}",
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = sale.saleDate.toReadableDateTime(),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            /* ---- TOTAL AMOUNT ---- */
+            Text(
+                text = "₹${sale.finalAmount}",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            /* ---- ACTIONS ---- */
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onInvoiceClick) {
                     Icon(
                         Icons.Default.Receipt,
-                        contentDescription = "View Invoice"
+                        contentDescription = "Invoice"
                     )
+                    Spacer(Modifier.width(6.dp))
+                    Text("Invoice")
                 }
             }
         }
     }
 }
+
+/* -------------------------------------------------------------------------- */
+/*                              EMPTY STATE                                   */
+/* -------------------------------------------------------------------------- */
 
 @Composable
 private fun EmptySalesState(
@@ -157,9 +160,22 @@ private fun EmptySalesState(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "No sales recorded yet",
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                Icons.Default.Receipt,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "No sales recorded yet",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Tap + to create your first sale",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }
