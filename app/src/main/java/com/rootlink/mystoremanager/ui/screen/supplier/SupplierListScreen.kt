@@ -1,68 +1,70 @@
 package com.rootlink.mystoremanager.ui.screen.supplier
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ListAlt
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rootlink.mystoremanager.data.entity.SupplierEntity
-import com.rootlink.mystoremanager.ui.navigation.Routes
+import com.rootlink.mystoremanager.ui.viewmodel.SupplierViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SupplierListScreen(
-    navController: NavController,
-    suppliers: List<SupplierEntity> = emptyList() // temporary
+    navController: NavController
 ) {
+    val viewModel: SupplierViewModel = hiltViewModel()
+    val suppliersWithDue by viewModel.suppliersWithDue.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadSuppliersWithDue()
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Suppliers") }
-            )
+            TopAppBar(title = { Text("Suppliers") })
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    // TODO: navigate to AddSupplierScreen
-                }
+                onClick = { navController.navigate("supplier_add") }
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Supplier")
             }
         }
-    ) { paddingValues ->
+    ) { padding ->
 
-        if (suppliers.isEmpty()) {
-            EmptySupplierState(
+        if (suppliersWithDue.isEmpty()) {
+            Box(
                 modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
-            )
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("No suppliers added")
+            }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
+                modifier = Modifier.padding(padding)
             ) {
-                items(suppliers) { supplier ->
-                    SupplierRow(
-                        supplier = supplier,
-                        onPurchaseClick = {
+                items(suppliersWithDue) { (supplier, due) ->
+                    SupplierListItem(
+                        supplierName = supplier.name,
+                        due = due,
+                        onClick = {
                             navController.navigate(
-                                "purchase_entry/${supplier.supplierId}"
-                            )
-                        },
-                        onLedgerClick = {
-                            navController.navigate(
-                                "supplier_ledger/${supplier.supplierId}"
+                                "supplier_detail/${supplier.supplierId}"
                             )
                         }
                     )
@@ -73,71 +75,53 @@ fun SupplierListScreen(
 }
 
 @Composable
-private fun SupplierRow(
-    supplier: SupplierEntity,
-    onPurchaseClick: () -> Unit,
-    onLedgerClick: () -> Unit
+private fun SupplierListItem(
+    supplierName: String,
+    due: Double,
+    onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
 
-            Text(
-                text = supplier.name,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Phone: ${supplier.phone}",
-                style = MaterialTheme.typography.bodySmall
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.End,
-                modifier = Modifier.fillMaxWidth()
+            // Business icon / initial
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(40.dp)
             ) {
-
-                IconButton(onClick = onPurchaseClick) {
-                    Icon(
-                        Icons.Default.ShoppingCart,
-                        contentDescription = "New Purchase"
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = supplierName.first().uppercase(),
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
+            }
 
-                IconButton(onClick = onLedgerClick) {
-                    Icon(
-                        Icons.Default.ListAlt,
-                        contentDescription = "Supplier Ledger"
-                    )
-                }
+            Spacer(Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = supplierName,
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Text(
+                    text = "Due: ₹${"%,.0f".format(due)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (due > 0)
+                        MaterialTheme.colorScheme.error
+                    else
+                        MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
 }
-
-@Composable
-private fun EmptySupplierState(
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "No suppliers added yet",
-            style = MaterialTheme.typography.bodyMedium
-        )
-    }
-}
-
-

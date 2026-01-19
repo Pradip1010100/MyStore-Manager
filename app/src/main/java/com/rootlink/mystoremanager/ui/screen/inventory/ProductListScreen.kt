@@ -5,62 +5,75 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rootlink.mystoremanager.data.entity.ProductEntity
 import com.rootlink.mystoremanager.ui.navigation.Routes
+import com.rootlink.mystoremanager.ui.viewmodel.InventoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductListScreen(
     navController: NavController,
-    products: List<ProductEntity> = emptyList() // temporary
+    viewModel: InventoryViewModel = hiltViewModel()
 ) {
+    val products by viewModel.products.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadProducts()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Products") }
+                title = { Text("Inventory") },
+                actions = {
+                    TextButton(
+                        onClick = { navController.navigate(Routes.LOW_STOCK) }
+                    ) {
+                        Text("Low Stock")
+                    }
+                }
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    // TODO: navigate to AddProductScreen
-                }
+                onClick = { navController.navigate(Routes.PRODUCT_ADD) }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Product")
+                Icon(Icons.Default.Add, null)
             }
         }
-    ) { paddingValues ->
+    ) { padding ->
 
         if (products.isEmpty()) {
             EmptyProductState(
                 modifier = Modifier
-                    .padding(paddingValues)
+                    .padding(padding)
                     .fillMaxSize()
             )
         } else {
             LazyColumn(
                 modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 items(products) { product ->
-                    ProductRow(
+                    InventoryProductRow(
                         product = product,
-                        onStockClick = {
-                            navController.navigate(Routes.STOCK_OVERVIEW)
-                        },
-                        onAdjustClick = {
+                        onOpenInventory = {
                             navController.navigate(
-                                "stock_adjustment/${product.productId}"
+                                "product_inventory/${product.productId}"
                             )
+                        },
+                        onDeactivate = {
+                            viewModel.deactivateProduct(product.productId)
                         }
                     )
                 }
@@ -70,58 +83,63 @@ fun ProductListScreen(
 }
 
 @Composable
-private fun ProductRow(
+private fun InventoryProductRow(
     product: ProductEntity,
-    onStockClick: () -> Unit,
-    onAdjustClick: () -> Unit
+    onOpenInventory: () -> Unit,
+    onDeactivate: () -> Unit
 ) {
     Card(
         modifier = Modifier
-            .padding(8.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
             .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp)
+        onClick = onOpenInventory
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
 
-            Text(
-                text = product.name,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Brand: ${product.brand}",
-                style = MaterialTheme.typography.bodySmall
-            )
-
-            Text(
-                text = "Price: ₹${product.sellingPrice}",
-                style = MaterialTheme.typography.bodySmall
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.End,
-                modifier = Modifier.fillMaxWidth()
+            /* -------- LEFT INFO -------- */
+            Column(
+                modifier = Modifier.weight(1f)
             ) {
+                Text(
+                    text = product.name,
+                    style = MaterialTheme.typography.titleMedium
+                )
 
-                IconButton(onClick = onStockClick) {
-                    Icon(
-                        Icons.Default.Inventory,
-                        contentDescription = "View Stock"
-                    )
-                }
+                Spacer(Modifier.height(2.dp))
 
-                IconButton(onClick = onAdjustClick) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Adjust Stock"
-                    )
-                }
+                Text(
+                    text = buildString {
+                        if (product.brand.isNotBlank()) append(product.brand)
+                        if (product.unit.isNotBlank()) append(" • ${product.unit}")
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                Text(
+                    text = "₹${product.sellingPrice}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            /* -------- ACTION -------- */
+            IconButton(
+                onClick = onDeactivate
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Deactivate Product",
+                    tint = MaterialTheme.colorScheme.error
+                )
             }
         }
     }
@@ -137,7 +155,8 @@ private fun EmptyProductState(
     ) {
         Text(
             text = "No products added yet",
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

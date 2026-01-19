@@ -10,16 +10,18 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.rootlink.mystoremanager.data.enums.StockAdjustmentType
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.rootlink.mystoremanager.ui.viewmodel.InventoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StockAdjustmentScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: InventoryViewModel = hiltViewModel()
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val productId = backStackEntry
-        ?.arguments
-        ?.getLong("productId") ?: return
+    val productId =
+        backStackEntry?.arguments?.getLong("productId") ?: return
 
     var adjustmentType by remember { mutableStateOf(StockAdjustmentType.IN) }
     var quantity by remember { mutableStateOf("") }
@@ -27,9 +29,7 @@ fun StockAdjustmentScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Stock Adjustment") }
-            )
+            TopAppBar(title = { Text("Stock Adjustment") })
         }
     ) { paddingValues ->
 
@@ -41,20 +41,13 @@ fun StockAdjustmentScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            Text("Adjustment Type", style = MaterialTheme.typography.titleSmall)
+            Text("Adjustment Type")
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AdjustmentTypeChip(
-                    text = "IN",
-                    selected = adjustmentType == StockAdjustmentType.IN
-                ) {
+                AdjustmentTypeChip("IN", adjustmentType == StockAdjustmentType.IN) {
                     adjustmentType = StockAdjustmentType.IN
                 }
-
-                AdjustmentTypeChip(
-                    text = "OUT",
-                    selected = adjustmentType == StockAdjustmentType.OUT
-                ) {
+                AdjustmentTypeChip("OUT", adjustmentType == StockAdjustmentType.OUT) {
                     adjustmentType = StockAdjustmentType.OUT
                 }
             }
@@ -63,9 +56,7 @@ fun StockAdjustmentScreen(
                 value = quantity,
                 onValueChange = { quantity = it },
                 label = { Text("Quantity") },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -76,14 +67,16 @@ fun StockAdjustmentScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             Button(
+                enabled = quantity.isNotBlank() && reason.isNotBlank(),
                 onClick = {
-                    if (quantity.isNotBlank() && reason.isNotBlank()) {
-                        // TODO: call InventoryViewModel.adjustStock(...)
-                        navController.popBackStack()
-                    }
+                    viewModel.adjustStock(
+                        productId = productId,
+                        type = adjustmentType,
+                        quantity = quantity.toInt(),
+                        reason = reason
+                    )
+                    navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -92,6 +85,7 @@ fun StockAdjustmentScreen(
         }
     }
 }
+
 
 @Composable
 private fun AdjustmentTypeChip(

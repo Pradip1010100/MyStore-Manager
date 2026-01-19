@@ -20,4 +20,7 @@ interface SupplierDao {
 
     @Query("SELECT * FROM suppliers WHERE status = 'ACTIVE'")
     suspend fun getActive(): List<SupplierEntity>
+
+    @Query("SELECT * FROM suppliers where supplierId = :supplierId ")
+    suspend fun getById(supplierId: Long): SupplierEntity
 }

@@ -17,4 +17,17 @@ interface SupplierPaymentDao {
         ORDER BY paymentDate
     """)
     suspend fun getBySupplier(supplierId: Long): List<SupplierPaymentEntity>
+
+    @Query("""
+    SELECT COALESCE(SUM(amount), 0)
+    FROM supplier_payments
+    WHERE supplierId = :supplierId
+""")
+    suspend fun getTotalPaidBySupplier(supplierId: Long): Double
+
+
+
+    @Query("SELECT COALESCE(SUM(totalAmount), 0) FROM purchases WHERE supplierId = :supplierId")
+    suspend fun getTotalAmountBySupplier(supplierId: Long): Double
+
 }

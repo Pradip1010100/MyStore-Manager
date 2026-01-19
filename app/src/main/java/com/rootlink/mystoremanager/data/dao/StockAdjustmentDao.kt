@@ -13,4 +13,13 @@ interface StockAdjustmentDao {
 
     @Query("SELECT * FROM stock_adjustments WHERE productId = :productId")
     suspend fun getByProduct(productId: Long): List<StockAdjustmentEntity>
+
+    @Query("""
+        SELECT * FROM stock_adjustments
+        WHERE productId = :productId
+        ORDER BY adjustmentDate DESC
+    """)
+    suspend fun getHistoryForProduct(
+        productId: Long
+    ): List<StockAdjustmentEntity>
 }

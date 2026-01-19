@@ -16,109 +16,111 @@ import javax.inject.Singleton
 object DatabaseModule {
 
     // --------------------------------------------------
-    // DATABASE (SINGLETON)
+    // DATABASE
     // --------------------------------------------------
     @Provides
     @Singleton
     fun provideDatabase(
         @ApplicationContext context: Context
-    ): AppDatabase {
-        return Room.databaseBuilder(
+    ): AppDatabase =
+        Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "mystore_db"
         )
             .fallbackToDestructiveMigration(true)
             .build()
-    }
 
     // --------------------------------------------------
     // WORKERS
     // --------------------------------------------------
     @Provides
-    fun workerDao(db: AppDatabase): WorkerDao =
+    fun provideWorkerDao(db: AppDatabase): WorkerDao =
         db.workerDao()
 
     @Provides
-    fun workerPaymentDao(db: AppDatabase): WorkerPaymentDao =
+    fun provideWorkerPaymentDao(db: AppDatabase): WorkerPaymentDao =
         db.workerPaymentDao()
 
     @Provides
     fun provideWorkerAttendanceDao(db: AppDatabase): WorkerAttendanceDao =
         db.workerAttendanceDao()
 
-
     // --------------------------------------------------
     // PRODUCTS & INVENTORY
     // --------------------------------------------------
     @Provides
-    fun productCategoryDao(db: AppDatabase): ProductCategoryDao =
+    fun provideProductCategoryDao(db: AppDatabase): ProductCategoryDao =
         db.productCategoryDao()
 
     @Provides
-    fun productDao(db: AppDatabase): ProductDao =
+    fun provideProductDao(db: AppDatabase): ProductDao =
         db.productDao()
 
     @Provides
-    fun stockDao(db: AppDatabase): StockDao =
+    fun provideStockDao(db: AppDatabase): StockDao =
         db.stockDao()
 
     @Provides
-    fun stockAdjustmentDao(db: AppDatabase): StockAdjustmentDao =
+    fun provideStockAdjustmentDao(db: AppDatabase): StockAdjustmentDao =
         db.stockAdjustmentDao()
 
     // --------------------------------------------------
-    // SUPPLIERS & CUSTOMERS
+    // SUPPLIERS
     // --------------------------------------------------
     @Provides
-    fun supplierDao(db: AppDatabase): SupplierDao =
+    fun provideSupplierDao(db: AppDatabase): SupplierDao =
         db.supplierDao()
 
     @Provides
-    fun customerDao(db: AppDatabase): CustomerDao =
+    fun provideSupplierPaymentDao(db: AppDatabase): SupplierPaymentDao =
+        db.supplierPaymentDao()
+
+    @Provides
+    fun providePurchaseDao(db: AppDatabase): PurchaseDao =
+        db.purchaseDao()
+
+    @Provides
+    fun providePurchaseItemDao(db: AppDatabase): PurchaseItemDao =
+        db.purchaseItemDao()
+
+    // --------------------------------------------------
+    // CUSTOMERS
+    // --------------------------------------------------
+    @Provides
+    fun provideCustomerDao(db: AppDatabase): CustomerDao =
         db.customerDao()
 
     // --------------------------------------------------
     // SALES
     // --------------------------------------------------
     @Provides
-    fun saleDao(db: AppDatabase): SaleDao =
+    fun provideSaleDao(db: AppDatabase): SaleDao =
         db.saleDao()
 
     @Provides
-    fun saleItemDao(db: AppDatabase): SaleItemDao =
+    fun provideSaleItemDao(db: AppDatabase): SaleItemDao =
         db.saleItemDao()
 
     @Provides
-    fun oldBatteryDao(db: AppDatabase): OldBatteryDao =
+    fun provideOldBatteryDao(db: AppDatabase): OldBatteryDao =
         db.oldBatteryDao()
-
-    // --------------------------------------------------
-    // PURCHASE
-    // --------------------------------------------------
-    @Provides
-    fun purchaseDao(db: AppDatabase): PurchaseDao =
-        db.purchaseDao()
-
-    @Provides
-    fun purchaseItemDao(db: AppDatabase): PurchaseItemDao =
-        db.purchaseItemDao()
 
     // --------------------------------------------------
     // ORDERS
     // --------------------------------------------------
     @Provides
-    fun orderDao(db: AppDatabase): OrderDao =
+    fun provideOrderDao(db: AppDatabase): OrderDao =
         db.orderDao()
 
     @Provides
-    fun orderItemDao(db: AppDatabase): OrderItemDao =
+    fun provideOrderItemDao(db: AppDatabase): OrderItemDao =
         db.orderItemDao()
 
     // --------------------------------------------------
     // ACCOUNTING
     // --------------------------------------------------
     @Provides
-    fun transactionDao(db: AppDatabase): TransactionDao =
+    fun provideTransactionDao(db: AppDatabase): TransactionDao =
         db.transactionDao()
 }

@@ -8,16 +8,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
-import com.rootlink.mystoremanager.ui.screen.accounting.DailySummaryScreen
-import com.rootlink.mystoremanager.ui.screen.accounting.TransactionListScreen
-import com.rootlink.mystoremanager.ui.screen.inventory.ProductListScreen
-import com.rootlink.mystoremanager.ui.screen.inventory.StockAdjustmentScreen
-import com.rootlink.mystoremanager.ui.screen.inventory.StockOverviewScreen
+import com.rootlink.mystoremanager.ui.screen.accounting.*
+import com.rootlink.mystoremanager.ui.screen.inventory.*
 import com.rootlink.mystoremanager.ui.screen.report.*
 import com.rootlink.mystoremanager.ui.screen.sales.*
 import com.rootlink.mystoremanager.ui.screen.supplier.*
 import com.rootlink.mystoremanager.ui.screen.worker.*
-import com.rootlink.mystoremanager.ui.viewmodel.*
 
 @Composable
 fun AppNavGraph(
@@ -35,57 +31,44 @@ fun AppNavGraph(
             startDestination = Routes.WORKER_LIST,
             route = MainRoute.WORKERS.route
         ) {
-            //Worker List
+
             composable(Routes.WORKER_LIST) {
-                WorkerListScreen(
-                    navController = navController
-                )
+                WorkerListScreen(navController)
             }
 
-            //Add Worker
             composable(Routes.WORKER_ADD) {
                 AddWorkerScreen(navController)
             }
 
-            //Profile
             composable(
-                route = Routes.WORKER_PROFILE,
+                Routes.WORKER_PROFILE,
                 arguments = listOf(
-                    navArgument("workerId") {
-                        type = NavType.LongType
-                    }
+                    navArgument("workerId") { type = NavType.LongType }
                 )
             ) {
                 WorkerProfileScreen(navController)
             }
 
-            //Attendance
             composable(Routes.WORKER_ATTENDANCE) {
                 AttendanceScreen(navController)
             }
 
-            //Payment
             composable(
                 Routes.WORKER_PAYMENT,
-                arguments = listOf(navArgument("workerId") {
-                    type = NavType.LongType
-                })
-            ) {
-                WorkerPaymentScreen(
-                    navController = navController
+                arguments = listOf(
+                    navArgument("workerId") { type = NavType.LongType }
                 )
+            ) {
+                WorkerPaymentScreen(navController)
             }
 
-            //Ledger
             composable(
                 Routes.WORKER_LEDGER,
-                arguments = listOf(navArgument("workerId") {
-                    type = NavType.LongType
-                })
-            ) {
-                WorkerLedgerScreen(
-                    navController = navController
+                arguments = listOf(
+                    navArgument("workerId") { type = NavType.LongType }
                 )
+            ) {
+                WorkerLedgerScreen(navController)
             }
         }
 
@@ -99,23 +82,54 @@ fun AppNavGraph(
                 SupplierListScreen(navController)
             }
 
+            composable(Routes.SUPPLIER_ADD) {
+                AddEditSupplierScreen(navController)
+            }
+
+            composable(
+                Routes.SUPPLIER_DETAIL,
+                arguments = listOf(
+                    navArgument("supplierId") { type = NavType.LongType }
+                )
+            ) {
+                SupplierDetailScreen(navController)
+            }
+
             composable(
                 Routes.PURCHASE_ENTRY,
-                arguments = listOf(navArgument("supplierId") {
-                    type = NavType.LongType
-                })
+                arguments = listOf(
+                    navArgument("supplierId") { type = NavType.LongType }
+                )
             ) {
-                PurchaseEntryScreen(navController)
+                SupplierPurchaseScreen(navController)
+            }
+
+            composable(
+                Routes.SUPPLIER_PAYMENT,
+                arguments = listOf(
+                    navArgument("supplierId") { type = NavType.LongType }
+                )
+            ) {
+                PaySupplierScreen(navController)
             }
 
             composable(
                 Routes.SUPPLIER_LEDGER,
-                arguments = listOf(navArgument("supplierId") {
-                    type = NavType.LongType
-                })
+                arguments = listOf(
+                    navArgument("supplierId") { type = NavType.LongType }
+                )
             ) {
                 SupplierLedgerScreen(navController)
             }
+        }
+
+        composable(
+            Routes.SUPPLIER_PROFILE,
+            arguments = listOf(
+                navArgument("supplierId") { type = NavType.LongType }
+            )
+        ) {
+            SupplierProfileScreen(navController)
         }
 
         // ================= SALES =================
@@ -125,26 +139,20 @@ fun AppNavGraph(
         ) {
 
             composable(Routes.SALES_HOME) {
-                SalesHomeScreen(
-                    navController = navController
-                )
+                SalesHomeScreen(navController)
             }
 
             composable(Routes.CREATE_SALE) {
-                CreateSaleScreen(
-                    navController = navController
-                )
+                CreateSaleScreen(navController)
             }
 
             composable(
                 Routes.INVOICE_VIEW,
-                arguments = listOf(navArgument("saleId") {
-                    type = NavType.LongType
-                })
-            ) {
-                InvoiceViewScreen(
-                    navController = navController
+                arguments = listOf(
+                    navArgument("saleId") { type = NavType.LongType }
                 )
+            ) {
+                InvoiceViewScreen(navController)
             }
         }
 
@@ -158,17 +166,45 @@ fun AppNavGraph(
                 ProductListScreen(navController)
             }
 
-            composable(Routes.STOCK_OVERVIEW) {
-                StockOverviewScreen(navController)
+            composable(Routes.PRODUCT_ADD) {
+                AddProductScreen(navController)
             }
 
             composable(
-                Routes.STOCK_ADJUSTMENT,
+                Routes.PRODUCT_INVENTORY,
                 arguments = listOf(navArgument("productId") {
                     type = NavType.LongType
                 })
             ) {
+                ProductInventoryScreen(navController)
+            }
+
+//            composable(Routes.STOCK_OVERVIEW) {
+//                StockOverviewScreen(navController)
+//            }
+
+            composable(
+                Routes.STOCK_ADJUSTMENT,
+                arguments = listOf(
+                    navArgument("productId") { type = NavType.LongType }
+                )
+            ) {
                 StockAdjustmentScreen(navController)
+            }
+
+            // ✅ STOCK HISTORY (NEW)
+//            composable(
+//                Routes.STOCK_HISTORY,
+//                arguments = listOf(
+//                    navArgument("productId") { type = NavType.LongType }
+//                )
+//            ) {
+//                StockHistoryScreen(navController)
+//            }
+
+            // ✅ LOW STOCK ALERTS (NEW)
+            composable(Routes.LOW_STOCK) {
+                LowStockScreen()
             }
         }
 
@@ -179,9 +215,7 @@ fun AppNavGraph(
         ) {
 
             composable(Routes.TRANSACTION_LIST) {
-                TransactionListScreen(
-                    navController = navController
-                )
+                TransactionListScreen(navController)
             }
 
             composable(Routes.DAILY_SUMMARY) {

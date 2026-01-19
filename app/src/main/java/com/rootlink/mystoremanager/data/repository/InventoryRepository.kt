@@ -1,62 +1,97 @@
 package com.rootlink.mystoremanager.data.repository
 
 import androidx.room.Transaction
+import com.rootlink.mystoremanager.data.dao.ProductCategoryDao
+import com.rootlink.mystoremanager.data.dao.ProductDao
 import com.rootlink.mystoremanager.data.dao.StockAdjustmentDao
 import com.rootlink.mystoremanager.data.dao.StockDao
 import com.rootlink.mystoremanager.data.dao.TransactionDao
+import com.rootlink.mystoremanager.data.entity.ProductCategoryEntity
+import com.rootlink.mystoremanager.data.entity.ProductEntity
 import com.rootlink.mystoremanager.data.entity.StockAdjustmentEntity
-import com.rootlink.mystoremanager.data.entity.TransactionEntity
-import com.rootlink.mystoremanager.data.enums.PaymentMode
+import com.rootlink.mystoremanager.data.entity.StockEntity
 import com.rootlink.mystoremanager.data.enums.StockAdjustmentType
-import com.rootlink.mystoremanager.data.enums.TransactionCategory
-import com.rootlink.mystoremanager.data.enums.TransactionReferenceType
-import com.rootlink.mystoremanager.data.enums.TransactionType
 import javax.inject.Inject
 
 class InventoryRepository @Inject constructor(
+    private val productDao: ProductDao,
+    private val productCategoryDao: ProductCategoryDao,
     private val stockDao: StockDao,
     private val stockAdjustmentDao: StockAdjustmentDao,
     private val transactionDao: TransactionDao
 ) {
 
-    @Transaction
-    suspend fun adjustStock(
-        adjustment: StockAdjustmentEntity,
-        hasFinancialImpact: Boolean,
-        amount: Double?
-    ) {
-        val delta =
-            if (adjustment.adjustmentType == StockAdjustmentType.IN)
-                adjustment.quantity
-            else
-                -adjustment.quantity
+    /* ---------- CATEGORY ---------- */
 
-        stockDao.updateStock(
+    suspend fun addCategory(category: ProductCategoryEntity) =
+        productCategoryDao.insert(category)
+
+    suspend fun getActiveCategories() =
+        productCategoryDao.getActive()
+
+    /* ---------- PRODUCT ---------- */
+
+    @Transaction
+    suspend fun addProduct(product: ProductEntity) {
+        val productId = productDao.insert(product)
+
+        // 🚨 IMPORTANT: initialize stock
+        stockDao.insert(
+            StockEntity(
+                productId = productId,
+                quantityOnHand = 0.0,
+                lastUpdated = System.currentTimeMillis()
+            )
+        )
+    }
+    suspend fun deactivateProduct(productId: Long) =
+        productDao.deactivate(productId)
+
+    suspend fun getProducts() =
+        productDao.getActive()
+
+    suspend fun getProduct(productId: Long) =
+        productDao.getById(productId)
+    /* ---------- STOCK ---------- */
+    suspend fun getStockOverview() =
+        stockDao.getStockOverview()
+
+    suspend fun getLowStock(limit: Double) =
+        stockDao.getLowStock(limit)
+
+    @Transaction
+    suspend fun adjustStock(adjustment: StockAdjustmentEntity) {
+
+        val stock = stockDao.getStock(adjustment.productId)
+            ?: throw IllegalStateException("Stock row missing")
+
+        val currentQty = stock.quantityOnHand
+
+        val newQty = when (adjustment.adjustmentType) {
+            StockAdjustmentType.IN ->
+                currentQty + adjustment.quantity
+
+            StockAdjustmentType.OUT -> {
+                if (currentQty < adjustment.quantity) {
+                    throw IllegalArgumentException("Insufficient stock")
+                }
+                currentQty - adjustment.quantity
+            }
+        }
+
+        stockDao.setStock(
             productId = adjustment.productId,
-            delta = delta,
+            newQty = newQty,
             time = System.currentTimeMillis()
         )
 
         stockAdjustmentDao.insert(adjustment)
-
-        if (hasFinancialImpact && amount != null) {
-            transactionDao.insert(
-                TransactionEntity(
-                    transactionDate = System.currentTimeMillis(),
-                    transactionType =
-                        if (delta > 0)
-                            TransactionType.IN
-                        else
-                            TransactionType.OUT,
-                    category = TransactionCategory.ADJUSTMENT,
-                    amount = amount,
-                    paymentMode = PaymentMode.CASH,
-                    referenceId = adjustment.adjustmentId,
-                    notes = adjustment.reason,
-                    transactionId = 0,
-                    referenceType = TransactionReferenceType.SALE
-                )
-            )
-        }
     }
+
+
+    suspend fun getStockHistory(productId: Long) =
+        stockAdjustmentDao.getHistoryForProduct(productId)
+
+    suspend fun getAllStock() =
+        stockDao.getAll()
 }

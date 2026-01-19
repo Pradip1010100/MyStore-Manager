@@ -25,7 +25,7 @@ data class StockAdjustmentEntity(
     val productId: Long,
 
     val adjustmentType: StockAdjustmentType, // IN / OUT
-    val quantity:Int,
+    val quantity: Double,
 
     val reason: String,
     val adjustmentDate: Long

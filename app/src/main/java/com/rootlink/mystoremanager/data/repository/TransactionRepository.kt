@@ -39,11 +39,8 @@ class TransactionRepository @Inject constructor(
             when (tx.referenceType) {
 
                 TransactionReferenceType.WORKER_PAYMENT -> {
-                    val payment =
-                        workerPaymentDao.getById(tx.referenceId)
-
-                    val worker =
-                        workerDao.getById(payment.workerId)
+                    val payment = workerPaymentDao.getById(tx.referenceId)
+                    val worker = workerDao.getById(payment.workerId)
 
                     TransactionUiItem(
                         transactionId = tx.transactionId,
@@ -55,6 +52,20 @@ class TransactionRepository @Inject constructor(
                         title = "Salary Payment",
                         subtitle = "Worker: ${worker.name}",
                         notes = payment.notes ?: tx.notes
+                    )
+                }
+
+                TransactionReferenceType.SUPPLIER_PAYMENT -> {
+                    TransactionUiItem(
+                        transactionId = tx.transactionId,
+                        date = tx.transactionDate,
+                        type = tx.transactionType,
+                        category = tx.category,
+                        amount = tx.amount,
+                        paymentMode = tx.paymentMode,
+                        title = "Supplier Payment",
+                        subtitle = null,
+                        notes = tx.notes
                     )
                 }
 
@@ -102,5 +113,6 @@ class TransactionRepository @Inject constructor(
             }
         }
     }
+
 
 }

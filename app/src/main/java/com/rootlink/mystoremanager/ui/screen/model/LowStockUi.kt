@@ -1,10 +1,9 @@
 package com.rootlink.mystoremanager.ui.screen.model
 
-import androidx.room.Embedded
 import com.rootlink.mystoremanager.data.entity.ProductEntity
 import com.rootlink.mystoremanager.data.entity.StockEntity
 
-data class StockUi(
-    @Embedded val product: ProductEntity,
-    @Embedded(prefix = "stock_") val stock: StockEntity
+data class LowStockUi(
+    val product: ProductEntity,
+    val stock: StockEntity
 )
