@@ -69,5 +69,11 @@ interface StockDao {
 """)
     suspend fun getLowStock(limit: Double): List<StockUi>
 
+    @Query("""
+    SELECT COUNT(*)
+    FROM stock
+    WHERE quantityOnHand <= :limit
+""")
+    suspend fun getLowStockCount(limit: Double): Int
 
 }

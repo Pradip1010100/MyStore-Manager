@@ -10,7 +10,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import com.rootlink.mystoremanager.ui.screen.accounting.*
 import com.rootlink.mystoremanager.ui.screen.inventory.*
-import com.rootlink.mystoremanager.ui.screen.report.*
+import com.rootlink.mystoremanager.ui.screen.dashboard.*
 import com.rootlink.mystoremanager.ui.screen.sales.*
 import com.rootlink.mystoremanager.ui.screen.supplier.*
 import com.rootlink.mystoremanager.ui.screen.worker.*
@@ -25,6 +25,36 @@ fun AppNavGraph(
         startDestination = MainRoute.WORKERS.route,
         modifier = modifier
     ) {
+        // ================= DASHBOARD =================
+        navigation(
+            startDestination = Routes.DASHBOARD,
+            route = MainRoute.DASHBOARD.route
+        ) {
+
+            composable(Routes.DASHBOARD) {
+                DashboardScreen(navController)
+            }
+
+            composable(Routes.SALES_REPORT) {
+                SalesReportScreen(navController)
+            }
+
+            composable(Routes.PURCHASE_REPORT) {
+                PurchaseReportScreen(navController)
+            }
+
+            composable(Routes.WORKER_REPORT) {
+                WorkerReportScreen(navController)
+            }
+
+            composable(Routes.STOCK_REPORT) {
+                StockReportScreen(navController)
+            }
+
+            composable(Routes.PROFIT_LOSS) {
+                ProfitLossScreen(navController)
+            }
+        }
 
         // ================= WORKERS =================
         navigation(
@@ -192,16 +222,6 @@ fun AppNavGraph(
                 StockAdjustmentScreen(navController)
             }
 
-            // ✅ STOCK HISTORY (NEW)
-//            composable(
-//                Routes.STOCK_HISTORY,
-//                arguments = listOf(
-//                    navArgument("productId") { type = NavType.LongType }
-//                )
-//            ) {
-//                StockHistoryScreen(navController)
-//            }
-
             // ✅ LOW STOCK ALERTS (NEW)
             composable(Routes.LOW_STOCK) {
                 LowStockScreen()
@@ -223,31 +243,6 @@ fun AppNavGraph(
             }
         }
 
-        // ================= REPORTS =================
-        navigation(
-            startDestination = Routes.SALES_REPORT,
-            route = MainRoute.REPORTS.route
-        ) {
 
-            composable(Routes.SALES_REPORT) {
-                SalesReportScreen(navController)
-            }
-
-            composable(Routes.PURCHASE_REPORT) {
-                PurchaseReportScreen(navController)
-            }
-
-            composable(Routes.WORKER_REPORT) {
-                WorkerReportScreen(navController)
-            }
-
-            composable(Routes.STOCK_REPORT) {
-                StockReportScreen(navController)
-            }
-
-            composable(Routes.PROFIT_LOSS) {
-                ProfitLossScreen(navController)
-            }
-        }
     }
 }

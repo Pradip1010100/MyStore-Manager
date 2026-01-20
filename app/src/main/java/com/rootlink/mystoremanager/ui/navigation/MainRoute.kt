@@ -6,5 +6,5 @@ enum class MainRoute(val route: String) {
     SALES("sales"),
     INVENTORY("inventory"),
     ACCOUNTING("accounting"),
-    REPORTS("reports")
+    DASHBOARD("dashboard")
 }

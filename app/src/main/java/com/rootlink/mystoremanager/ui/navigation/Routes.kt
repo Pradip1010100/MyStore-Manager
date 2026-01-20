@@ -61,6 +61,7 @@ object Routes {
     // REPORTS
     // =========================
 
+    const val DASHBOARD = "dashboard_home"
     const val SALES_REPORT = "sales_report"
     const val PURCHASE_REPORT = "purchase_report"
     const val WORKER_REPORT = "worker_report"

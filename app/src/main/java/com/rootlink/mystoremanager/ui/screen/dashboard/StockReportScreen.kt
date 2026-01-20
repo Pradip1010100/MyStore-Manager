@@ -1,27 +1,26 @@
-package com.rootlink.mystoremanager.ui.screen.report
+package com.rootlink.mystoremanager.ui.screen.dashboard
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.rootlink.mystoremanager.ui.screen.model.PurchaseReportItemUi
+import com.rootlink.mystoremanager.ui.screen.model.StockReportItemUi
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PurchaseReportScreen(
+fun StockReportScreen(
     navController: NavController,
-    report: List<PurchaseReportItemUi> = emptyList() // temporary
+    report: List<StockReportItemUi> = emptyList() // temporary
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Purchase Report") }
+                title = { Text("Stock Report") }
             )
         }
     ) { paddingValues ->
@@ -39,7 +38,7 @@ fun PurchaseReportScreen(
                     .fillMaxSize()
             ) {
                 items(report) { item ->
-                    PurchaseReportRow(item)
+                    StockReportRow(item)
                 }
             }
         }
@@ -47,9 +46,11 @@ fun PurchaseReportScreen(
 }
 
 @Composable
-private fun PurchaseReportRow(
-    item: PurchaseReportItemUi
+private fun StockReportRow(
+    item: StockReportItemUi
 ) {
+    val isLowStock = item.quantityOnHand <= 0
+
     Card(
         modifier = Modifier
             .padding(8.dp)
@@ -61,42 +62,32 @@ private fun PurchaseReportRow(
         ) {
 
             Text(
-                text = item.date,
+                text = item.productName,
                 style = MaterialTheme.typography.titleSmall
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "Purchases: ${item.purchaseCount}",
+                text = "Qty: ${item.quantityOnHand} ${item.unit}",
+                color = if (isLowStock)
+                    MaterialTheme.colorScheme.error
+                else
+                    MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodySmall
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    Text(
-                        text = "Total: ₹${item.totalPurchase}",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(
-                        text = "Paid: ₹${item.totalPaid}",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
+            Text(
+                text = "Purchase Value: ₹${item.purchaseValue}",
+                style = MaterialTheme.typography.bodySmall
+            )
 
-                if (item.totalDue > 0) {
-                    Text(
-                        text = "Due: ₹${item.totalDue}",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
+            Text(
+                text = "Selling Value: ₹${item.sellingValue}",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }

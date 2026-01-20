@@ -17,4 +17,15 @@ interface SaleDao {
 
     @Query("SELECT * FROM sales WHERE saleId = :id")
     suspend fun getById(id: Long): SaleEntity
+
+    @Query("""
+    SELECT COUNT(*)
+    FROM sales
+    WHERE saleDate BETWEEN :from AND :to
+""")
+    suspend fun getSalesCountBetween(
+        from: Long,
+        to: Long
+    ): Int
+
 }

@@ -32,4 +32,15 @@ interface WorkerPaymentDao {
 
     @Query("SELECT * FROM worker_payments WHERE workerId = :workerId")
     suspend fun getByWorker(workerId: Long): List<WorkerPaymentEntity>
+
+    @Query("""
+    SELECT COUNT(*)
+    FROM worker_payments
+    WHERE paymentDate BETWEEN :from AND :to
+""")
+    suspend fun getPaymentCountBetween(
+        from: Long,
+        to: Long
+    ): Int
+
 }

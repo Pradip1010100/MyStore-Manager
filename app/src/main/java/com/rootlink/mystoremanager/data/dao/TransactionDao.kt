@@ -20,4 +20,21 @@ interface TransactionDao {
         from: Long,
         to: Long
     ): List<TransactionEntity>
+
+    @Query("""
+    SELECT COALESCE(SUM(amount), 0)
+    FROM transactions
+    WHERE transactionType = 'IN'
+      AND transactionDate BETWEEN :from AND :to
+""")
+    suspend fun getCashIn(from: Long, to: Long): Double
+
+    @Query("""
+    SELECT COALESCE(SUM(amount), 0)
+    FROM transactions
+    WHERE transactionType = 'OUT'
+      AND transactionDate BETWEEN :from AND :to
+""")
+    suspend fun getCashOut(from: Long, to: Long): Double
+
 }

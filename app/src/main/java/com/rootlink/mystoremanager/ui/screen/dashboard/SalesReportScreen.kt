@@ -1,4 +1,4 @@
-package com.rootlink.mystoremanager.ui.screen.report
+package com.rootlink.mystoremanager.ui.screen.dashboard
 
 import com.rootlink.mystoremanager.ui.screen.model.SalesReportItemUi
 import androidx.compose.foundation.layout.*

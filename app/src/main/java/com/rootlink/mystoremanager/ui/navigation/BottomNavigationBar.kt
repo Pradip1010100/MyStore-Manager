@@ -4,6 +4,8 @@ package com.rootlink.mystoremanager.ui.navigation
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
@@ -38,7 +40,10 @@ fun BottomNavigationBar(
                     )
                 },
                 label = {
-                    Text(text = item.label)
+                    Text(
+                        text = item.label,
+                        fontSize = 12.sp,
+                    )
                 }
             )
         }
