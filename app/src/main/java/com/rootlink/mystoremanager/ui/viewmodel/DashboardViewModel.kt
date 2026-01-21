@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rootlink.mystoremanager.data.entity.SupplierEntity
 import com.rootlink.mystoremanager.data.entity.WorkerEntity
+import com.rootlink.mystoremanager.data.enums.DashboardPeriod
 import com.rootlink.mystoremanager.data.repository.DashboardRepository
 import com.rootlink.mystoremanager.ui.screen.model.DashboardUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,6 +32,21 @@ class DashboardViewModel @Inject constructor(
         MutableStateFlow<List<WorkerEntity>>(emptyList())
     val workers: StateFlow<List<WorkerEntity>> =
         _workers.asStateFlow()
+
+    private val _selectedPeriod =
+        MutableStateFlow(DashboardPeriod.TODAY)
+    val selectedPeriod = _selectedPeriod.asStateFlow()
+
+    fun selectToday() {
+        _selectedPeriod.value = DashboardPeriod.TODAY
+        loadTodayDashboard()
+    }
+
+    fun selectMonth() {
+        _selectedPeriod.value = DashboardPeriod.MONTH
+        loadMonthlyDashboard()
+    }
+
 
     fun loadSuppliers() {
         viewModelScope.launch {

@@ -5,7 +5,7 @@ enum class TransactionCategory {
     SALE,
     PURCHASE,
     SALARY,
-    EXPENSE,
+    PERSONAL,
     ADJUSTMENT,
     ADVANCE
 }

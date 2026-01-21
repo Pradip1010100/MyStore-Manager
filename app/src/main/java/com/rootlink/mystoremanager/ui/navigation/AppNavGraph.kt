@@ -22,7 +22,7 @@ fun AppNavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = MainRoute.WORKERS.route,
+        startDestination = MainRoute.DASHBOARD.route,
         modifier = modifier
     ) {
         // ================= DASHBOARD =================
@@ -33,6 +33,10 @@ fun AppNavGraph(
 
             composable(Routes.DASHBOARD) {
                 DashboardScreen(navController)
+            }
+
+            composable(Routes.PERSONAL_TRANSACTION) {
+                PersonalTransactionEntryScreen(navController)
             }
 
             composable(Routes.SALES_REPORT) {

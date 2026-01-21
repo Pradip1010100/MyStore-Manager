@@ -123,4 +123,8 @@ object DatabaseModule {
     @Provides
     fun provideTransactionDao(db: AppDatabase): TransactionDao =
         db.transactionDao()
+
+    @Provides
+    fun providePersonalTransactionDao(db: AppDatabase): PersonalTransactionDao =
+        db.personalTransactionDao()
 }

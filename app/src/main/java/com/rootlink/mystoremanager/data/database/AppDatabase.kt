@@ -2,6 +2,7 @@ package com.rootlink.mystoremanager.data.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.rootlink.mystoremanager.data.dao.*
 import com.rootlink.mystoremanager.data.entity.*
 
@@ -38,9 +39,10 @@ import com.rootlink.mystoremanager.data.entity.*
         OrderItemEntity::class,
 
         // ---------- ACCOUNTING ----------
-        TransactionEntity::class
+        TransactionEntity::class,
+        PersonalTransactionEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -78,4 +80,5 @@ abstract class AppDatabase : RoomDatabase() {
 
     // ---------- ACCOUNTING ----------
     abstract fun transactionDao(): TransactionDao
+    abstract fun personalTransactionDao(): PersonalTransactionDao
 }

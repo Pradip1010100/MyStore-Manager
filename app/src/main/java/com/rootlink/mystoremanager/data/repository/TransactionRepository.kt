@@ -1,5 +1,6 @@
 package com.rootlink.mystoremanager.data.repository
 
+import com.rootlink.mystoremanager.data.dao.PersonalTransactionDao
 import com.rootlink.mystoremanager.data.dao.TransactionDao
 import com.rootlink.mystoremanager.data.dao.WorkerDao
 import com.rootlink.mystoremanager.data.dao.WorkerPaymentDao
@@ -13,6 +14,7 @@ import javax.inject.Singleton
 class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
     private val workerPaymentDao: WorkerPaymentDao,
+    private val personalTransactionDao: PersonalTransactionDao,
     private val workerDao: WorkerDao
 ) {
 
@@ -110,9 +112,23 @@ class TransactionRepository @Inject constructor(
                         notes = tx.notes
                     )
                 }
+            TransactionReferenceType.PERSONAL -> {
+                val personal = personalTransactionDao.getById(tx.referenceId)
+
+                TransactionUiItem(
+                    transactionId = tx.transactionId,
+                    date = tx.transactionDate,
+                    type = tx.transactionType,          // IN / OUT
+                    category = tx.category,              // PERSONAL
+                    amount = tx.amount,
+                    paymentMode = tx.paymentMode,
+                    title = personal.title,              // Rent / Medical / Gift
+                    subtitle = personal.personName,
+                    notes = personal.note
+                )
+            }
+
             }
         }
     }
-
-
 }

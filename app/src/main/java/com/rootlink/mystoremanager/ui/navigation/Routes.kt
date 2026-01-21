@@ -58,10 +58,12 @@ object Routes {
     const val DAILY_SUMMARY = "daily_summary"
 
     // =========================
-    // REPORTS
+    // DASHBOARD
     // =========================
 
     const val DASHBOARD = "dashboard_home"
+    const val PERSONAL_TRANSACTION = "personal_transaction"
+
     const val SALES_REPORT = "sales_report"
     const val PURCHASE_REPORT = "purchase_report"
     const val WORKER_REPORT = "worker_report"

@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -20,6 +21,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.rootlink.mystoremanager.data.entity.SupplierEntity
 import com.rootlink.mystoremanager.data.entity.WorkerEntity
+import com.rootlink.mystoremanager.data.enums.DashboardPeriod
 import com.rootlink.mystoremanager.ui.navigation.MainRoute
 import com.rootlink.mystoremanager.ui.navigation.Routes
 import com.rootlink.mystoremanager.ui.screen.model.DashboardUiState
@@ -38,6 +40,7 @@ fun DashboardScreen(
     val uiState by viewModel.uiState.collectAsState()
     val suppliers by viewModel.suppliers.collectAsState()
     val workers by viewModel.workers.collectAsState()
+    val selectedPeriod by viewModel.selectedPeriod.collectAsState()
 
     var showSupplierSheet by remember { mutableStateOf(false) }
     var showWorkerSheet by remember { mutableStateOf(false) }
@@ -75,8 +78,15 @@ fun DashboardScreen(
 
             item {
                 DashboardPeriodToggle(
-                    onToday = { viewModel.loadTodayDashboard() },
-                    onMonthly = { viewModel.loadMonthlyDashboard() }
+                    selectedPeriod = selectedPeriod,
+                    onToday = { viewModel.selectToday() },
+                    onMonthly = { viewModel.selectMonth() }
+                )
+            }
+            item {
+                BalanceSummaryCard(
+                    cashIn = uiState.cashIn,
+                    cashOut = uiState.cashOut
                 )
             }
 
@@ -99,21 +109,15 @@ fun DashboardScreen(
                     )
                 }
             }
-
             item {
-                SmartQuickActions(
-                    hasLowStock = uiState.lowStockCount > 0,
-                    onSale = {
-                        navController.navigate(Routes.CREATE_SALE)
-                    },
-                    onPurchase = {
-                        showSupplierSheet = true
-                    },
-                    onPayWorker = {
-                        showWorkerSheet = true
-                    }
+                DashboardActionRow(
+                    onSale = { navController.navigate(Routes.CREATE_SALE) },
+                    onPurchase = { showSupplierSheet = true },
+                    onPayWorker = { showWorkerSheet = true },
+                    onPersonal = { navController.navigate(Routes.PERSONAL_TRANSACTION) }
                 )
             }
+
         }
     }
 
@@ -156,30 +160,6 @@ fun AdvancedDashboardKpis(
     navController: NavHostController
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-
-        Row(Modifier.fillMaxWidth()) {
-            KpiCard(
-                title = "Cash In",
-                value = "₹ ${uiState.cashIn}",
-                delta = +12.5,
-                positive = true,
-                onClick = {
-                    navController.navigate(Routes.TRANSACTION_LIST)
-                },
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(Modifier.width(8.dp))
-            KpiCard(
-                title = "Cash Out",
-                value = "₹ ${uiState.cashOut}",
-                delta = -4.2,
-                positive = false,
-                onClick = {
-                    navController.navigate(Routes.TRANSACTION_LIST)
-                },
-                modifier = Modifier.weight(1f)
-            )
-        }
 
         Row(Modifier.fillMaxWidth()) {
             KpiCard(
@@ -257,6 +237,58 @@ fun KpiCard(
 /* ---------------------------------------------------
    INSIGHT SECTION
 --------------------------------------------------- */
+@Composable
+fun BalanceSummaryCard(
+    cashIn: Double,
+    cashOut: Double
+) {
+    val balance = cashIn - cashOut
+    val positive = balance >= 0
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor =
+                if (positive) Color(0xFFE8F5E9)
+                else Color(0xFFFFEBEE)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+
+            Text(
+                "Available Balance",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+
+            Text(
+                text = "₹ ${String.format("%.2f", balance)}",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color =
+                    if (positive) Color(0xFF2E7D32)
+                    else Color(0xFFC62828)
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "In: ₹${cashIn}",
+                    fontSize = 12.sp,
+                    color = Color(0xFF2E7D32)
+                )
+                Text(
+                    "Out: ₹${cashOut}",
+                    fontSize = 12.sp,
+                    color = Color(0xFFC62828)
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun InsightSection(
@@ -297,35 +329,77 @@ fun InsightSection(
 --------------------------------------------------- */
 
 @Composable
-fun SmartQuickActions(
-    hasLowStock: Boolean,
+fun DashboardActionRow(
     onSale: () -> Unit,
     onPurchase: () -> Unit,
-    onPayWorker: () -> Unit
+    onPayWorker: () -> Unit,
+    onPersonal: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
 
-        Button(onClick = onSale, modifier = Modifier.fillMaxWidth()) {
-            Text("New Sale")
-        }
+        DashboardActionItem(
+            icon = Icons.Default.Receipt,
+            label = "Sale",
+            onClick = onSale
+        )
 
-        Button(
-            onClick = onPurchase,
-            modifier = Modifier.fillMaxWidth(),
-            colors =
-                if (hasLowStock)
-                    ButtonDefaults.buttonColors(containerColor = Color(0xFFFFE082))
-                else ButtonDefaults.buttonColors()
+        DashboardActionItem(
+            icon = Icons.Default.Inventory,
+            label = "Purchase",
+            onClick = onPurchase
+        )
+
+        DashboardActionItem(
+            icon = Icons.Default.People,
+            label = "Pay Worker",
+            onClick = onPayWorker
+        )
+
+        DashboardActionItem(
+            icon = Icons.Default.AccountBalanceWallet,
+            label = "Personal",
+            onClick = onPersonal
+        )
+    }
+}
+
+@Composable
+fun DashboardActionItem(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clickable { onClick() }
+            .padding(8.dp)
+    ) {
+        Card(
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFE3F2FD)
+            )
         ) {
-            Text(if (hasLowStock) "Restock Now ⚠" else "New Purchase")
+            Box(
+                modifier = Modifier
+                    .size(48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null)
+            }
         }
 
-        OutlinedButton(
-            onClick = onPayWorker,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Pay Worker")
-        }
+        Spacer(Modifier.height(4.dp))
+
+        Text(
+            label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
@@ -335,31 +409,25 @@ fun SmartQuickActions(
 
 @Composable
 fun DashboardPeriodToggle(
+    selectedPeriod: DashboardPeriod,
     onToday: () -> Unit,
     onMonthly: () -> Unit
 ) {
-    var selected by remember { mutableStateOf(0) }
-
     Row(horizontalArrangement = Arrangement.Center) {
         FilterChip(
-            selected = selected == 0,
-            onClick = {
-                selected = 0
-                onToday()
-            },
+            selected = selectedPeriod == DashboardPeriod.TODAY,
+            onClick = onToday,
             label = { Text("Today") }
         )
         Spacer(Modifier.width(8.dp))
         FilterChip(
-            selected = selected == 1,
-            onClick = {
-                selected = 1
-                onMonthly()
-            },
+            selected = selectedPeriod == DashboardPeriod.MONTH,
+            onClick = onMonthly,
             label = { Text("This Month") }
         )
     }
 }
+
 
 /* ---------------------------------------------------
    GENERIC BOTTOM SHEET SELECTOR
