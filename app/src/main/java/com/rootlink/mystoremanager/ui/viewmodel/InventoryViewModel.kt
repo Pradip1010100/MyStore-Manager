@@ -47,11 +47,17 @@ class InventoryViewModel @Inject constructor(
     val products = _products.asStateFlow()
 
     fun loadProducts() = viewModelScope.launch {
-        _products.value = repository.getProducts()
+        _products.value = repository.getAllProducts()
     }
     fun deactivateProduct(productId: Long) = viewModelScope.launch {
         repository.deactivateProduct(productId)
         loadProducts()
+        loadStockOverview()
+    }
+    fun activateProduct(productId: Long) = viewModelScope.launch {
+        repository.activateProduct(productId)
+        loadProducts()
+        loadStockOverview()
     }
 
     fun addProduct(

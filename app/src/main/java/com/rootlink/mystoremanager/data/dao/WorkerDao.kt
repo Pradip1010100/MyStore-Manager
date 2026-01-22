@@ -22,6 +22,12 @@ interface WorkerDao {
     @Query("UPDATE workers SET status = 'INACTIVE' WHERE workerId = :id")
     suspend fun deactivate(id: Long)
 
+    @Query("UPDATE workers SET status = 'ACTIVE' WHERE workerId = :id")
+    suspend fun activate(id: Long)
+
+    @Query("SELECT * FROM workers")
+    suspend fun getAll(): List<WorkerEntity>
+
     // READ
     @Query("SELECT * FROM workers WHERE workerId = :id")
     suspend fun getById(id: Long): WorkerEntity

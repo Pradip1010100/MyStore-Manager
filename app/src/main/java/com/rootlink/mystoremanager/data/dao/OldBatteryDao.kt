@@ -11,6 +11,6 @@ interface OldBatteryDao {
     @Insert
     suspend fun insert(oldBattery: OldBatteryEntity)
 
-    @Query("SELECT * FROM old_batteries WHERE saleId = :saleId")
+    @Query("SELECT * FROM old_batteries WHERE saleId = :saleId LIMIT 1")
     suspend fun getBySaleId(saleId: Long): OldBatteryEntity?
 }

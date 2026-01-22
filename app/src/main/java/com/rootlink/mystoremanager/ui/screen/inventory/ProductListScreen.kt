@@ -1,5 +1,6 @@
 package com.rootlink.mystoremanager.ui.screen.inventory
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,12 +11,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rootlink.mystoremanager.data.entity.ProductEntity
+import com.rootlink.mystoremanager.data.enums.ProductStatus
 import com.rootlink.mystoremanager.ui.navigation.Routes
 import com.rootlink.mystoremanager.ui.viewmodel.InventoryViewModel
+
+enum class ProductFilter {
+    ALL, ACTIVE, INACTIVE
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,8 +33,20 @@ fun ProductListScreen(
 ) {
     val products by viewModel.products.collectAsState()
 
+    var filter by remember { mutableStateOf(ProductFilter.ALL) }
+
     LaunchedEffect(Unit) {
         viewModel.loadProducts()
+    }
+
+    val filteredProducts = remember(products, filter) {
+        when (filter) {
+            ProductFilter.ALL -> products
+            ProductFilter.ACTIVE ->
+                products.filter { it.status == ProductStatus.ACTIVE }
+            ProductFilter.INACTIVE ->
+                products.filter { it.status != ProductStatus.ACTIVE }
+        }
     }
 
     Scaffold(
@@ -51,67 +71,118 @@ fun ProductListScreen(
         }
     ) { padding ->
 
-        if (products.isEmpty()) {
-            EmptyProductState(
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+
+            /* ---------------- FILTER CHIPS ---------------- */
+
+            Row(
                 modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(products) { product ->
-                    InventoryProductRow(
-                        product = product,
-                        onOpenInventory = {
-                            navController.navigate(
-                                "product_inventory/${product.productId}"
-                            )
-                        },
-                        onDeactivate = {
-                            viewModel.deactivateProduct(product.productId)
-                        }
-                    )
+                FilterChip(
+                    selected = filter == ProductFilter.ALL,
+                    onClick = { filter = ProductFilter.ALL },
+                    label = { Text("All") }
+                )
+
+                FilterChip(
+                    selected = filter == ProductFilter.ACTIVE,
+                    onClick = { filter = ProductFilter.ACTIVE },
+                    label = { Text("Active") }
+                )
+
+                FilterChip(
+                    selected = filter == ProductFilter.INACTIVE,
+                    onClick = { filter = ProductFilter.INACTIVE },
+                    label = { Text("Inactive") }
+                )
+            }
+
+            /* ---------------- LIST ---------------- */
+
+            if (filteredProducts.isEmpty()) {
+                EmptyProductState(
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    items(filteredProducts) { product ->
+                        InventoryProductRow(
+                            product = product,
+                            onOpenInventory = {
+                                navController.navigate(
+                                    "product_inventory/${product.productId}"
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+
 @Composable
 private fun InventoryProductRow(
     product: ProductEntity,
-    onOpenInventory: () -> Unit,
-    onDeactivate: () -> Unit
+    onOpenInventory: () -> Unit
 ) {
+    val isInactive = product.status != ProductStatus.ACTIVE
+
     Card(
         modifier = Modifier
             .padding(horizontal = 12.dp, vertical = 6.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .then(
+                if (isInactive)
+                    Modifier.alpha(0.6f)
+                else
+                    Modifier
+            ),
+        border =
+            if (isInactive)
+                BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant
+                )
+            else
+                null,
         onClick = onOpenInventory
     ) {
         Row(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            /* -------- LEFT INFO -------- */
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = product.name,
-                    style = MaterialTheme.typography.titleMedium
-                )
+            Column(modifier = Modifier.weight(1f)) {
 
-                Spacer(Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = product.name,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    if (isInactive) {
+                        Spacer(Modifier.width(8.dp))
+                        AssistChip(
+                            onClick = {},
+                            label = { Text("Inactive") }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(4.dp))
 
                 Text(
                     text = buildString {
@@ -127,23 +198,18 @@ private fun InventoryProductRow(
                 Text(
                     text = "₹${product.sellingPrice}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            /* -------- ACTION -------- */
-            IconButton(
-                onClick = onDeactivate
-            ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Deactivate Product",
-                    tint = MaterialTheme.colorScheme.error
+                    color =
+                        if (isInactive)
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        else
+                            MaterialTheme.colorScheme.primary
                 )
             }
         }
     }
 }
+
+
 
 @Composable
 private fun EmptyProductState(

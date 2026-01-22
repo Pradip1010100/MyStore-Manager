@@ -20,30 +20,39 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.rootlink.mystoremanager.data.entity.CustomerEntity
 import com.rootlink.mystoremanager.ui.screen.model.ProductForSaleUi
 import com.rootlink.mystoremanager.ui.screen.model.SaleItemUi
 import com.rootlink.mystoremanager.ui.viewmodel.SalesViewModel
 import kotlin.math.roundToInt
 
-/* -------------------------------------------------------------------------- */
-/*                                  SCREEN                                    */
-/* -------------------------------------------------------------------------- */
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateSaleScreen(
-    navController: NavController
-) {
+fun CreateSaleScreen(navController: NavController) {
+
     val viewModel: SalesViewModel = hiltViewModel()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.loadProductsForSale()
+        viewModel.loadCustomers()
     }
 
     val products by viewModel.products.collectAsState()
+    val customers by viewModel.customers.collectAsState()
 
-    var showAddItemDialog by remember { mutableStateOf(false) }
     val saleItems = remember { mutableStateListOf<SaleItemUi>() }
+    var showAddItemDialog by remember { mutableStateOf(false) }
+    var showCustomerPicker by remember { mutableStateOf(false) }
+
+    /* ---------------- CUSTOMER STATE ---------------- */
+
+    var selectedCustomer by remember { mutableStateOf<CustomerEntity?>(null) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var phone by rememberSaveable { mutableStateOf("") }
+    var address by rememberSaveable { mutableStateOf("") }
+
+    /* ---------------- AMOUNT STATE ---------------- */
 
     var discount by rememberSaveable { mutableStateOf("") }
     var hasOldBattery by rememberSaveable { mutableStateOf(false) }
@@ -56,101 +65,191 @@ fun CreateSaleScreen(
     val finalAmount = subtotal - discountValue - oldBatteryValue
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Create Sale") }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Create Sale") },
+                actions = {
+                    IconButton(onClick = { showAddItemDialog = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Item")
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            Surface(shadowElevation = 6.dp) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Total", style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            "₹%.2f".format(finalAmount),
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+
+                    Button(
+                        enabled = saleItems.isNotEmpty(),
+                        onClick = {
+                            viewModel.createSale(
+                                items = saleItems,
+                                discount = discountValue,
+                                oldBatteryAmount =
+                                    if (hasOldBattery) oldBatteryValue else null,
+                                existingCustomer = selectedCustomer,
+                                manualName = name,
+                                manualPhone = phone,
+                                manualAddress = address
+                            )
+                            navController.popBackStack()
+                        }
+                    ) {
+                        Text("COMPLETE")
+                    }
+                }
+            }
+        }
     ) { padding ->
 
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
+                .padding(12.dp)
                 .fillMaxSize()
         ) {
 
-            Button(
-                onClick = { showAddItemDialog = true },
+            /* ================= CUSTOMER ================= */
+
+            Surface(
+                tonalElevation = 2.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Default.Add, null)
-                Spacer(Modifier.width(8.dp))
-                Text("Add Item")
+                Column(Modifier.padding(12.dp)) {
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Customer", style = MaterialTheme.typography.titleSmall)
+                        TextButton(onClick = { showCustomerPicker = true }) {
+                            Text("Select Existing")
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = {
+                                name = it
+                                selectedCustomer = null
+                            },
+                            label = { Text("Name") },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        OutlinedTextField(
+                            value = phone,
+                            onValueChange = {
+                                phone = it
+                                selectedCustomer = null
+                            },
+                            label = { Text("Phone") },
+                            keyboardOptions =
+                                KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = address,
+                        onValueChange = {
+                            address = it
+                            selectedCustomer = null
+                        },
+                        label = { Text("Address") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
+
+            /* ================= ITEMS ================= */
 
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 items(saleItems, key = { it.productId!! }) { item ->
-                    SaleItemRow(
-                        item = item,
-                        onRemove = { saleItems.remove(item) }
-                    )
+                    DenseItemRow(item) {
+                        saleItems.remove(item)
+                    }
+                }
+
+                if (saleItems.isEmpty()) {
+                    item {
+                        Text(
+                            "No items added",
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+            /* ================= ADJUSTMENTS ================= */
+
+            OutlinedTextField(
+                value = discount,
+                onValueChange = { discount = it },
+                label = { Text("Discount") },
+                keyboardOptions =
+                    KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = hasOldBattery,
+                    onCheckedChange = { hasOldBattery = it }
                 )
-            ) {
-                Column(Modifier.padding(16.dp)) {
-
-                    AmountRow("Subtotal", subtotal)
-
-                    OutlinedTextField(
-                        value = discount,
-                        onValueChange = { discount = it },
-                        label = { Text("Discount") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = hasOldBattery,
-                            onCheckedChange = { hasOldBattery = it }
-                        )
-                        Text("Old Battery Exchange")
-                    }
-
-                    AnimatedVisibility(hasOldBattery) {
-                        OutlinedTextField(
-                            value = oldBatteryAmount,
-                            onValueChange = { oldBatteryAmount = it },
-                            label = { Text("Old Battery Amount") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    Divider(Modifier.padding(vertical = 12.dp))
-
-                    AmountRow("Final Amount", finalAmount, highlight = true)
-                }
+                Text("Old Battery Exchange")
             }
 
-            Spacer(Modifier.height(12.dp))
-
-            Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                enabled = saleItems.isNotEmpty(),
-                onClick = {
-                    viewModel.createSale(
-                        items = saleItems,
-                        discount = discountValue,
-                        oldBatteryAmount =
-                            if (hasOldBattery) oldBatteryValue else null
-                    )
-                    navController.popBackStack()
-                }
-            ) {
-                Text("COMPLETE SALE")
+            AnimatedVisibility(hasOldBattery) {
+                OutlinedTextField(
+                    value = oldBatteryAmount,
+                    onValueChange = { oldBatteryAmount = it },
+                    label = { Text("Old Battery Amount") },
+                    keyboardOptions =
+                        KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
+    }
+
+    /* ================= DIALOGS ================= */
+
+    if (showCustomerPicker) {
+        CustomerPickerDialog(
+            customers = customers,
+            onSelect = {
+                selectedCustomer = it
+                name = it.name
+                phone = it.phone
+                address = it.address ?: ""
+                showCustomerPicker = false
+            },
+            onDismiss = { showCustomerPicker = false }
+        )
     }
 
     if (showAddItemDialog) {
@@ -158,16 +257,11 @@ fun CreateSaleScreen(
             products = products,
             saleItems = saleItems,
             onAdd = { product, qty ->
-
-                val existingItem = saleItems.find {
-                    it.productId == product.productId
-                }
-
-                if (existingItem != null) {
-                    val index = saleItems.indexOf(existingItem)
-                    saleItems[index] = existingItem.copy(
-                        quantity = existingItem.quantity + qty
-                    )
+                val existing = saleItems.find { it.productId == product.productId }
+                if (existing != null) {
+                    val i = saleItems.indexOf(existing)
+                    saleItems[i] =
+                        existing.copy(quantity = existing.quantity + qty)
                 } else {
                     saleItems.add(
                         SaleItemUi(
@@ -183,6 +277,36 @@ fun CreateSaleScreen(
         )
     }
 }
+
+/* ================= DENSE ITEM ROW ================= */
+
+@Composable
+private fun DenseItemRow(
+    item: SaleItemUi,
+    onRemove: () -> Unit
+) {
+    Surface(tonalElevation = 1.dp) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(item.productName)
+                Text(
+                    "Qty ${item.quantity} × ₹${item.price}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Text("₹${item.quantity * item.price}")
+            IconButton(onClick = onRemove) {
+                Icon(Icons.Default.Remove, contentDescription = "Remove")
+            }
+        }
+    }
+}
+
 
 /* -------------------------------------------------------------------------- */
 /*                               ITEM ROW                                     */
@@ -388,6 +512,46 @@ private fun ProductPickerDialog(
                                 modifier = Modifier.padding(16.dp),
                                 style = MaterialTheme.typography.bodySmall
                             )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+
+
+//Customer Picker Dialog
+
+@Composable
+fun CustomerPickerDialog(
+    customers: List<CustomerEntity>,
+    onSelect: (CustomerEntity) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Customer") },
+        text = {
+            LazyColumn {
+                items(customers) { customer ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onSelect(customer)
+                            }
+                            .padding(12.dp)
+                    ) {
+                        Column {
+                            Text(customer.name)
+                            Text(customer.phone, style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }

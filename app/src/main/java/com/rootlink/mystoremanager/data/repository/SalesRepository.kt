@@ -10,6 +10,7 @@ class SalesRepository @Inject constructor(
     private val saleDao: SaleDao,
     private val saleItemDao: SaleItemDao,
     private val stockDao: StockDao,
+    private val customerDao: CustomerDao,
     private val stockAdjustmentDao: StockAdjustmentDao,
     private val oldBatteryDao: OldBatteryDao,
     private val transactionDao: TransactionDao
@@ -18,6 +19,13 @@ class SalesRepository @Inject constructor(
     suspend fun getAllSales() = saleDao.getAll()
     suspend fun getSaleById(id: Long) = saleDao.getById(id)
     suspend fun getSaleItems(saleId: Long) = saleItemDao.getBySale(saleId)
+    suspend fun insertCustomer(customer: CustomerEntity):Long =
+        customerDao.insert(customer)
+    suspend fun getCustomerById(id: Long): CustomerEntity =
+        customerDao.getById(id)
+    suspend fun getAllCustomers(): List<CustomerEntity> = customerDao.getAll()
+    suspend fun getOldBatteryBySaleId(saleId: Long): OldBatteryEntity? =
+        oldBatteryDao.getBySaleId(saleId)
 
     @Transaction
     suspend fun createSale(

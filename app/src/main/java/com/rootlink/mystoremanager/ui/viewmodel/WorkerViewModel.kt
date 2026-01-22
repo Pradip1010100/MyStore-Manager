@@ -137,7 +137,7 @@ class WorkerViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             try {
-                val workers = workerRepository.getActiveWorkers()
+                val workers = workerRepository.getAllWorkers()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     workers = workers,
@@ -193,6 +193,20 @@ class WorkerViewModel @Inject constructor(
         }
     }
 
+    fun previewSalary(
+        workerId: Long,
+        from: Long,
+        to: Long
+    ) {
+        viewModelScope.launch {
+            val worker = workerRepository.getWorkerById(workerId)
+            val salary =
+                workerRepository.calculateSalary(worker, from, to)
+
+            _uiState.value =
+                _uiState.value.copy(calculatedSalary = salary)
+        }
+    }
 
     // -------------------------
     // LOAD LEDGER
@@ -227,6 +241,12 @@ class WorkerViewModel @Inject constructor(
         }
     }
 
+    fun activateWorker(workerId: Long) {
+        viewModelScope.launch {
+            workerRepository.activateWorker(workerId)
+            loadWorkers()
+        }
+    }
 
     fun calculateSalary(
         workerId: Long,
@@ -235,13 +255,16 @@ class WorkerViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             val worker = workerRepository.getWorkerById(workerId)
-            val salary =
-                workerRepository.calculateSalary(worker, from, to)
+            val preview =
+                workerRepository.calculateSalaryPreview(worker, from, to)
 
             _uiState.value =
-                _uiState.value.copy(calculatedSalary = salary)
+                _uiState.value.copy(
+                    salaryPreview = preview
+                )
         }
     }
+
 
     fun loadWorkerSummary(
         workerId: Long,

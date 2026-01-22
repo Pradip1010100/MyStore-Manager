@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.rootlink.mystoremanager.data.enums.ProductStatus
 import com.rootlink.mystoremanager.data.enums.StockAdjustmentType
 import com.rootlink.mystoremanager.ui.viewmodel.InventoryViewModel
 import java.text.SimpleDateFormat
@@ -30,6 +31,7 @@ fun ProductInventoryScreen(
 
     val stockOverview by viewModel.stockOverview.collectAsState()
     val history by viewModel.stockHistory.collectAsState()
+    var showConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(productId) {
         viewModel.loadStockOverview()
@@ -175,44 +177,78 @@ fun ProductInventoryScreen(
 
             /* ================= ACTIONS ================= */
             item {
-                Row(
+                Column(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
 
-                    FilledTonalButton(
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            navController.navigate(
-                                "stock_adjustment/${productId}?type=IN"
-                            )
-                        }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(Icons.Default.Add, null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("Stock IN")
+
+                        FilledTonalButton(
+                            modifier = Modifier.weight(1f),
+                            enabled = stockItem.product.status == ProductStatus.ACTIVE,
+                            onClick = {
+                                navController.navigate(
+                                    "stock_adjustment/${productId}?type=IN"
+                                )
+                            }
+                        ) {
+                            Icon(Icons.Default.Add, null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Stock IN")
+                        }
+
+                        FilledTonalButton(
+                            modifier = Modifier.weight(1f),
+                            enabled = stockItem.product.status == ProductStatus.ACTIVE,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            onClick = {
+                                navController.navigate(
+                                    "stock_adjustment/${productId}?type=OUT"
+                                )
+                            }
+                        ) {
+                            Icon(Icons.Default.Remove, null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Stock OUT")
+                        }
                     }
 
-                    FilledTonalButton(
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.error
-                        ),
-                        onClick = {
-                            navController.navigate(
-                                "stock_adjustment/${productId}?type=OUT"
-                            )
-                        }
+                    /* -------- ACTIVATE / DEACTIVATE -------- */
+
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors =
+                            if (stockItem.product.status == ProductStatus.ACTIVE)
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.error
+                                )
+                            else
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                ),
+                        onClick = { showConfirm = true }
                     ) {
-                        Icon(Icons.Default.Remove, null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("Stock OUT")
+                        Text(
+                            if (stockItem.product.status == ProductStatus.ACTIVE)
+                                "Deactivate Product"
+                            else
+                                "Activate Product"
+                        )
                     }
                 }
             }
+
 
             /* ================= HISTORY ================= */
             item {
@@ -239,6 +275,47 @@ fun ProductInventoryScreen(
             }
         }
     }
+    if (showConfirm) {
+        AlertDialog(
+            onDismissRequest = { showConfirm = false },
+            title = {
+                Text(
+                    if (stockItem?.product?.status == ProductStatus.ACTIVE)
+                        "Deactivate Product"
+                    else
+                        "Activate Product"
+                )
+            },
+            text = {
+                Text(
+                    if (stockItem?.product?.status == ProductStatus.ACTIVE)
+                        "This product will no longer be available for sale. Continue?"
+                    else
+                        "This product will become available for sale again. Continue?"
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirm = false
+                        if (stockItem?.product?.status == ProductStatus.ACTIVE) {
+                            viewModel.deactivateProduct(productId)
+                        } else {
+                            viewModel.activateProduct(productId)
+                        }
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirm = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
 }
 
 /* ---------------- SMALL COMPONENTS ---------------- */

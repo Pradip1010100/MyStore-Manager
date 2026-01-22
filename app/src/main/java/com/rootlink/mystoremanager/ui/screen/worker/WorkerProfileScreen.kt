@@ -1,6 +1,7 @@
 package com.rootlink.mystoremanager.ui.screen.worker
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -163,14 +166,27 @@ fun WorkerProfileScreen(
                     OutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
+                            contentColor =
+                                if (worker.status.name == "ACTIVE")
+                                    MaterialTheme.colorScheme.error
+                                else
+                                    MaterialTheme.colorScheme.primary
                         ),
                         onClick = {
-                            viewModel.deactivateWorker(worker.workerId)
+                            if (worker.status.name == "ACTIVE") {
+                                viewModel.deactivateWorker(worker.workerId)
+                            } else {
+                                viewModel.activateWorker(worker.workerId)
+                            }
                             navController.popBackStack()
                         }
                     ) {
-                        Text("Deactivate Worker")
+                        Text(
+                            if (worker.status.name == "ACTIVE")
+                                "Deactivate Worker"
+                            else
+                                "Activate Worker"
+                        )
                     }
                 }
             }
@@ -219,6 +235,8 @@ private fun ActionGrid(
     worker: WorkerEntity,
     navController: NavController
 ) {
+    val isActive = worker.status.name == "ACTIVE"
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -228,18 +246,26 @@ private fun ActionGrid(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
+
+                /* ---------- PAY (DISABLED WHEN INACTIVE) ---------- */
                 ActionIcon(
                     icon = Icons.Default.Payments,
-                    label = "Pay"
+                    label = "Pay",
+                    enabled = isActive
                 ) {
-                    navController.navigate("worker_payment/${worker.workerId}")
+                    navController.navigate(
+                        "worker_payment/${worker.workerId}"
+                    )
                 }
 
+                /* ---------- LEDGER (ALWAYS ENABLED) ---------- */
                 ActionIcon(
                     icon = Icons.Default.ReceiptLong,
                     label = "Ledger"
                 ) {
-                    navController.navigate("worker_ledger/${worker.workerId}")
+                    navController.navigate(
+                        "worker_ledger/${worker.workerId}"
+                    )
                 }
             }
         }
@@ -250,28 +276,56 @@ private fun ActionGrid(
 private fun ActionIcon(
     icon: ImageVector,
     label: String,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .clickable { onClick() }
+            .alpha(if (enabled) 1f else 0.4f)
+            .clickable(enabled = enabled) { onClick() }
             .padding(8.dp)
     ) {
         Card(
-            modifier = Modifier.size(56.dp)
+            modifier = Modifier.size(56.dp),
+            colors = CardDefaults.cardColors(
+                containerColor =
+                    if (enabled)
+                        MaterialTheme.colorScheme.surface
+                    else
+                        MaterialTheme.colorScheme.surfaceVariant
+            )
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = label)
+                Icon(
+                    icon,
+                    contentDescription = label,
+                    tint =
+                        if (enabled)
+                            MaterialTheme.colorScheme.onSurface
+                        else
+                            MaterialTheme.colorScheme.outline
+                )
             }
         }
+
         Spacer(Modifier.height(4.dp))
-        Text(label, style = MaterialTheme.typography.bodySmall)
+
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color =
+                if (enabled)
+                    MaterialTheme.colorScheme.onSurface
+                else
+                    MaterialTheme.colorScheme.outline
+        )
     }
 }
+
 
 @Composable
 fun AttendanceCalendar(
@@ -427,27 +481,49 @@ private fun CalendarDay(
     isToday: Boolean,
     isFuture: Boolean
 ) {
-    val (bgColor, textColor) = when {
-        isFuture -> MaterialTheme.colorScheme.surfaceVariant to
-                MaterialTheme.colorScheme.outline
+    val backgroundColor: Color
+    val textColor: Color
+    val borderColor: Color?
 
-        status == AttendanceStatus.PRESENT ->
-            MaterialTheme.colorScheme.primaryContainer to
-                    MaterialTheme.colorScheme.onPrimaryContainer
+    when {
+        isFuture -> {
+            backgroundColor = MaterialTheme.colorScheme.surfaceVariant
+            textColor = MaterialTheme.colorScheme.outline
+            borderColor = null
+        }
 
-        status == AttendanceStatus.ABSENT ->
-            MaterialTheme.colorScheme.errorContainer to
-                    MaterialTheme.colorScheme.onErrorContainer
+        status == AttendanceStatus.PRESENT -> {
+            backgroundColor = MaterialTheme.colorScheme.primaryContainer
+            textColor = MaterialTheme.colorScheme.onPrimaryContainer
+            borderColor = MaterialTheme.colorScheme.primary // ✅ GREEN BORDER
+        }
 
-        else ->
-            MaterialTheme.colorScheme.surfaceVariant to
-                    MaterialTheme.colorScheme.onSurfaceVariant
+        status == AttendanceStatus.ABSENT -> {
+            backgroundColor = MaterialTheme.colorScheme.errorContainer
+            textColor = MaterialTheme.colorScheme.onErrorContainer
+            borderColor = MaterialTheme.colorScheme.error // ✅ RED BORDER
+        }
+
+        else -> {
+            backgroundColor = MaterialTheme.colorScheme.surfaceVariant
+            textColor = MaterialTheme.colorScheme.onSurfaceVariant
+            borderColor = null
+        }
     }
 
     Box(
         modifier = Modifier
             .size(40.dp)
-            .background(bgColor, CircleShape),
+            .then(
+                if (borderColor != null)
+                    Modifier.border(
+                        width = 2.dp,
+                        color = borderColor,
+                        shape = CircleShape
+                    )
+                else Modifier
+            )
+            .background(backgroundColor, CircleShape),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -457,6 +533,7 @@ private fun CalendarDay(
         )
     }
 }
+
 
 
 @Composable

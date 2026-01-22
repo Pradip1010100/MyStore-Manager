@@ -1,32 +1,32 @@
 package com.rootlink.mystoremanager.ui.screen.worker
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.rootlink.mystoremanager.data.entity.WorkerPaymentEntity
 import com.rootlink.mystoremanager.data.enums.PaymentMode
-import com.rootlink.mystoremanager.data.enums.PaymentStatus
 import com.rootlink.mystoremanager.data.enums.PaymentType
 import com.rootlink.mystoremanager.data.enums.SalaryType
 import com.rootlink.mystoremanager.data.enums.WorkerPaymentStatus
 import com.rootlink.mystoremanager.ui.viewmodel.WorkerViewModel
 import com.rootlink.mystoremanager.util.toReadableDate
+import java.time.YearMonth
+import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkerPaymentScreen(
     navController: NavController,
-    viewModel: WorkerViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    viewModel: WorkerViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -35,21 +35,21 @@ fun WorkerPaymentScreen(
             ?.arguments
             ?.getLong("workerId") ?: return
 
-    var amount by remember { mutableStateOf("") }
-    var paymentType by remember { mutableStateOf(PaymentType.SALARY) }
-    var paymentMode by remember { mutableStateOf(PaymentMode.CASH) }
-    var notes by remember { mutableStateOf("") }
-
-    var paymentDate by remember {
-        mutableStateOf(System.currentTimeMillis())
-    }
-
-    // Load worker once
     LaunchedEffect(workerId) {
         viewModel.loadWorker(workerId)
     }
 
-    val worker = uiState.selectedWorker
+    val worker = uiState.selectedWorker ?: return
+
+    /* ---------------- STATE ---------------- */
+
+    var paymentType by remember { mutableStateOf(PaymentType.SALARY) }
+    var paymentMode by remember { mutableStateOf(PaymentMode.CASH) }
+
+    var fromDate by remember { mutableStateOf<Long?>(null) }
+    var toDate by remember { mutableStateOf<Long?>(null) }
+
+    var manualAmount by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -57,175 +57,245 @@ fun WorkerPaymentScreen(
         }
     ) { padding ->
 
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .padding(padding)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+
+            /* ---------------- WORKER INFO ---------------- */
+
+            Card {
+                Column(Modifier.padding(16.dp)) {
+                    Text(worker.name, style = MaterialTheme.typography.titleMedium)
+                    Text("Salary Type: ${worker.salaryType}")
                 }
             }
 
-            worker == null -> {
-                Box(
-                    modifier = Modifier
-                        .padding(padding)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Worker not found")
+            /* ---------------- PAYMENT TYPE ---------------- */
+
+            Text("Payment Type", fontWeight = FontWeight.Medium)
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                PaymentTypeChip("Salary", paymentType == PaymentType.SALARY) {
+                    paymentType = PaymentType.SALARY
+                }
+                PaymentTypeChip("Advance", paymentType == PaymentType.ADVANCE) {
+                    paymentType = PaymentType.ADVANCE
+                }
+                PaymentTypeChip("Other", paymentType == PaymentType.OTHER) {
+                    paymentType = PaymentType.OTHER
                 }
             }
 
-            else -> {
-                Column(
-                    modifier = Modifier
-                        .padding(padding)
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
+            /* ---------------- SALARY PREVIEW (READ ONLY) ---------------- */
 
-                    /* ================= WORKER INFO ================= */
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(worker.name, style = MaterialTheme.typography.titleMedium)
-                            Text("Salary Type: ${worker.salaryType.name}")
+            if (paymentType == PaymentType.SALARY) {
+
+                when (worker.salaryType) {
+
+                    SalaryType.DAILY -> {
+                        DatePickerField(
+                            label = "Select Date",
+                            date = fromDate
+                        ) {
+                            fromDate = it
+                            toDate = it
+                            viewModel.calculateSalary(workerId, it, it)
                         }
                     }
 
-                    /* ================= PAYMENT TYPE ================= */
-                    Text("Payment Type")
+                    SalaryType.MONTHLY -> {
+                        MonthPicker { month ->
+                            val start =
+                                month.atDay(1)
+                                    .atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant().toEpochMilli()
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PaymentTypeChip(
-                            text = "Salary",
-                            selected = paymentType == PaymentType.SALARY
-                        ) {
-                            paymentType = PaymentType.SALARY
-                        }
+                            val end =
+                                month.atEndOfMonth()
+                                    .atTime(23, 59, 59)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toInstant().toEpochMilli()
 
-                        PaymentTypeChip(
-                            text = "Advance",
-                            selected = paymentType == PaymentType.ADVANCE
-                        ) {
-                            paymentType = PaymentType.ADVANCE
+                            fromDate = start
+                            toDate = end
+                            viewModel.calculateSalary(workerId, start, end)
                         }
                     }
 
-                    /* ================= DATE ================= */
-                    OutlinedTextField(
-                        value = paymentDate.toReadableDate(),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Payment Date") },
-                        trailingIcon = {
-                            IconButton(onClick = {
-                                // Hook date picker here later
-                            }) {
-                                Icon(Icons.Default.Event, contentDescription = "Pick Date")
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    SalaryType.PER_JOB -> Unit
+                }
 
-                    /* ================= WORKED DAYS (MONTHLY ONLY) ================= */
-                    if (worker.salaryType == SalaryType.MONTHLY &&
-                        paymentType == PaymentType.SALARY
+                uiState.salaryPreview?.let { preview ->
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
                     ) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor =
-                                    MaterialTheme.colorScheme.surfaceVariant
+                        Column(Modifier.padding(16.dp)) {
+
+                            Text(
+                                "Attendance Summary",
+                                style = MaterialTheme.typography.titleSmall
                             )
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    "Worked Days Summary",
-                                    style = MaterialTheme.typography.titleSmall
-                                )
-                                Spacer(Modifier.height(4.dp))
 
-                                Text(
-                                    "Worked days will be calculated from attendance records."
-                                )
-                            }
+                            Spacer(Modifier.height(8.dp))
+
+                            Text("Present Days: ${preview.presentDays}")
+                            Text("Total Days: ${preview.totalDays}")
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Text(
+                                "Estimated Salary: ₹%.2f"
+                                    .format(preview.estimatedSalary),
+                                fontWeight = FontWeight.Bold
+                            )
                         }
-                    }
-
-                    /* ================= AMOUNT ================= */
-                    OutlinedTextField(
-                        value = amount,
-                        onValueChange = { amount = it },
-                        label = { Text("Amount") },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    /* ================= PAYMENT MODE ================= */
-                    PaymentModeDropdown(
-                        selected = paymentMode,
-                        onSelected = { paymentMode = it }
-                    )
-
-                    /* ================= NOTES ================= */
-                    OutlinedTextField(
-                        value = notes,
-                        onValueChange = { notes = it },
-                        label = { Text("Notes (optional)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    /* ================= SUBMIT ================= */
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            val amt = amount.toDoubleOrNull()
-                            if (amt != null && amt > 0) {
-                                viewModel.payWorker(
-                                    WorkerPaymentEntity(
-                                        paymentId = 0,
-                                        workerId = workerId,
-                                        amount = amt,
-                                        paymentType = paymentType,
-                                        paymentDate = paymentDate,
-                                        notes = notes.ifBlank { null },
-                                        status = WorkerPaymentStatus.COMPLETED
-                                    ),
-                                    paymentMode
-                                )
-
-                                navController.popBackStack()
-                            }
-                        }
-                    ) {
-                        Text("Submit Payment")
                     }
                 }
+            }
+
+            /* ---------------- MANUAL PAYMENT AMOUNT ---------------- */
+
+            OutlinedTextField(
+                value = manualAmount,
+                onValueChange = { manualAmount = it },
+                label = { Text("Payment Amount") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            /* ---------------- PAYMENT MODE ---------------- */
+
+            PaymentModeDropdown(
+                selected = paymentMode,
+                onSelected = { paymentMode = it }
+            )
+
+            /* ---------------- PAY ---------------- */
+
+            val payAmount = manualAmount.toDoubleOrNull()
+
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = payAmount != null && payAmount > 0,
+                onClick = {
+                    viewModel.payWorker(
+                        WorkerPaymentEntity(
+                            paymentId = 0,
+                            workerId = workerId,
+                            paymentDate = System.currentTimeMillis(),
+                            paymentType = paymentType,
+                            amount = payAmount ?: 0.0,
+                            status = WorkerPaymentStatus.COMPLETED,
+                            notes = null
+                        ),
+                        paymentMode
+                    )
+                    navController.popBackStack()
+                }
+            ) {
+                Text("Pay ₹%.2f".format(payAmount ?: 0.0))
             }
         }
     }
 }
 
 
+/* ========================================================================== */
+/*                               DATE PICKER                                  */
+/* ========================================================================== */
+
 @Composable
-private fun PaymentTypeChip(
-    text: String,
-    selected: Boolean,
-    onClick: () -> Unit
+private fun DatePickerField(
+    label: String,
+    date: Long?,
+    onDateSelected: (Long) -> Unit
 ) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(text) }
+    var showPicker by remember { mutableStateOf(false) }
+
+    OutlinedTextField(
+        value = date?.toReadableDate() ?: "",
+        onValueChange = {},
+        readOnly = true,
+        label = { Text(label) },
+        trailingIcon = {
+            IconButton(onClick = { showPicker = true }) {
+                Icon(Icons.Default.Event, null)
+            }
+        },
+        modifier = Modifier.fillMaxWidth()
     )
+
+    if (showPicker) {
+        val state = rememberDatePickerState()
+
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let(onDateSelected)
+                    showPicker = false
+                }) { Text("OK") }
+            }
+        ) {
+            DatePicker(state = state)
+        }
+    }
 }
+
+/* ========================================================================== */
+/*                               MONTH PICKER                                 */
+/* ========================================================================== */
+
+@Composable
+private fun MonthPicker(
+    onMonthSelected: (YearMonth) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(YearMonth.now()) }
+
+    OutlinedTextField(
+        value =
+            "${selected.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${selected.year}",
+        onValueChange = {},
+        readOnly = true,
+        label = { Text("Select Month") },
+        trailingIcon = {
+            IconButton(onClick = { expanded = true }) {
+                Icon(Icons.Default.Event, null)
+            }
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+        (0..11).forEach {
+            val month = YearMonth.now().minusMonths(it.toLong())
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        "${month.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${month.year}"
+                    )
+                },
+                onClick = {
+                    selected = month
+                    expanded = false
+                    onMonthSelected(month)
+                }
+            )
+        }
+    }
+}
+
+/* ========================================================================== */
+/*                           PAYMENT MODE DROPDOWN                             */
+/* ========================================================================== */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -254,15 +324,32 @@ private fun PaymentModeDropdown(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            PaymentMode.entries.forEach { mode ->
+            PaymentMode.entries.forEach {
                 DropdownMenuItem(
-                    text = { Text(mode.name) },
+                    text = { Text(it.name) },
                     onClick = {
-                        onSelected(mode)
+                        onSelected(it)
                         expanded = false
                     }
                 )
             }
         }
     }
+}
+
+/* ========================================================================== */
+/*                               CHIP                                         */
+/* ========================================================================== */
+
+@Composable
+private fun PaymentTypeChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(text) }
+    )
 }

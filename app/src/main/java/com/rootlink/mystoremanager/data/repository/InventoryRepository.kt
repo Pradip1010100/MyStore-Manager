@@ -10,6 +10,7 @@ import com.rootlink.mystoremanager.data.entity.ProductCategoryEntity
 import com.rootlink.mystoremanager.data.entity.ProductEntity
 import com.rootlink.mystoremanager.data.entity.StockAdjustmentEntity
 import com.rootlink.mystoremanager.data.entity.StockEntity
+import com.rootlink.mystoremanager.data.enums.ProductStatus
 import com.rootlink.mystoremanager.data.enums.StockAdjustmentType
 import javax.inject.Inject
 
@@ -46,6 +47,12 @@ class InventoryRepository @Inject constructor(
     }
     suspend fun deactivateProduct(productId: Long) =
         productDao.deactivate(productId)
+    suspend fun activateProduct(productId: Long) {
+        productDao.activate(productId)
+    }
+
+    suspend fun getAllProducts() =
+        productDao.getAllProducts()
 
     suspend fun getProducts() =
         productDao.getActive()

@@ -31,6 +31,9 @@ object DatabaseModule {
             .fallbackToDestructiveMigration(true)
             .build()
 
+    @Provides
+    fun provideCompanyProfileDao(db: AppDatabase) : CompanyProfileDao = db.companyProfileDao()
+
     // --------------------------------------------------
     // WORKERS
     // --------------------------------------------------

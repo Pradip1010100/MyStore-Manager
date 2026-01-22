@@ -33,6 +33,7 @@ import com.rootlink.mystoremanager.ui.viewmodel.SupplierViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.*
+import com.rootlink.mystoremanager.data.enums.SupplierStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +41,8 @@ fun SupplierDetailScreen(
     navController: NavController
 ) {
     val viewModel: SupplierViewModel = hiltViewModel()
+    val supplier by viewModel.supplier.collectAsState()
+    val isActive = supplier?.status == SupplierStatus.ACTIVE
 
     val supplierId =
         navController.currentBackStackEntry
@@ -53,6 +56,7 @@ fun SupplierDetailScreen(
     val due by viewModel.due.collectAsState()
 
     LaunchedEffect(supplierId) {
+        viewModel.loadSupplierProfile(supplierId)
         viewModel.loadSupplierDetail(supplierId)
     }
 
@@ -102,6 +106,7 @@ fun SupplierDetailScreen(
 
                 Button(
                     modifier = Modifier.weight(1f),
+                    enabled = isActive,
                     onClick = {
                         navController.navigate("purchase_entry/$supplierId")
                     }
@@ -111,12 +116,14 @@ fun SupplierDetailScreen(
 
                 OutlinedButton(
                     modifier = Modifier.weight(1f),
+                    enabled = isActive,
                     onClick = {
                         navController.navigate("supplier_payment/$supplierId")
                     }
                 ) {
                     Text("Pay")
                 }
+
 
                 OutlinedButton(
                     modifier = Modifier.weight(1f),
@@ -126,6 +133,15 @@ fun SupplierDetailScreen(
                 ) {
                     Text("Ledger")
                 }
+            }
+            Spacer(Modifier.height(8.dp))
+            if (!isActive) {
+                Text(
+                    text = "This supplier is inactive. Purchases and payments are disabled.",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+
             }
 
             Spacer(Modifier.height(28.dp))

@@ -21,6 +21,7 @@ data class WorkerUiState(
     // LEDGER
     val payments: List<WorkerPaymentEntity> = emptyList(),
 
+    val salaryPreview: SalaryPreview? = null,
     // SALARY SUMMARY
     val calculatedSalary: Double = 0.0,
     val paidAmount: Double = 0.0,

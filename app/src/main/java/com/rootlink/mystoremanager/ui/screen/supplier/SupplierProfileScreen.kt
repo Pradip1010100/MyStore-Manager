@@ -114,6 +114,8 @@ fun SupplierProfileScreen(
             Spacer(Modifier.height(16.dp))
 
             /* ---------- QUICK ACTIONS ---------- */
+            val isActive = s.status == SupplierStatus.ACTIVE
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -122,7 +124,7 @@ fun SupplierProfileScreen(
                 ActionIcon(
                     label = "Call",
                     icon = Icons.Default.Call,
-                    enabled = phone != null
+                    enabled = phone != null && isActive
                 ) {
                     context.startActivity(
                         Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))
@@ -132,7 +134,7 @@ fun SupplierProfileScreen(
                 ActionIcon(
                     label = "WhatsApp",
                     painter = painterResource(R.drawable.ic_whatsapp),
-                    enabled = phone != null
+                    enabled = phone != null && isActive
                 ) {
                     context.startActivity(
                         Intent(
@@ -144,7 +146,8 @@ fun SupplierProfileScreen(
 
                 ActionIcon(
                     label = "Edit",
-                    icon = Icons.Default.Edit
+                    icon = Icons.Default.Edit,
+                    enabled = phone != null && isActive
                 ) {
                     showEdit = true
                 }
@@ -183,14 +186,33 @@ fun SupplierProfileScreen(
             Spacer(Modifier.height(24.dp))
 
             /* ---------- MANAGEMENT ---------- */
-            OutlinedButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    viewModel.deactivateSupplier(supplierId)
-                    navController.popBackStack()
+
+            if (s.status == SupplierStatus.ACTIVE) {
+
+                OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    onClick = {
+                        viewModel.deactivateSupplier(supplierId)
+                        navController.popBackStack()
+                    }
+                ) {
+                    Text("Deactivate Supplier")
                 }
-            ) {
-                Text("Deactivate Supplier")
+
+            } else {
+
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        viewModel.activateSupplier(supplierId)
+                        navController.popBackStack()
+                    }
+                ) {
+                    Text("Activate Supplier")
+                }
             }
         }
     }

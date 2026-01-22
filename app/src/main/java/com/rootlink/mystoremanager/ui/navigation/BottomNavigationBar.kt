@@ -42,7 +42,7 @@ fun BottomNavigationBar(
                 label = {
                     Text(
                         text = item.label,
-                        fontSize = 12.sp,
+                        fontSize = 10.sp,
                     )
                 }
             )

@@ -18,8 +18,14 @@ interface SupplierDao {
     @Query("UPDATE suppliers SET status = 'INACTIVE' WHERE supplierId = :id")
     suspend fun deactivate(id: Long)
 
+    @Query("UPDATE suppliers SET status = 'ACTIVE' WHERE supplierId = :id")
+    suspend fun activate(id: Long)
+
     @Query("SELECT * FROM suppliers WHERE status = 'ACTIVE'")
     suspend fun getActive(): List<SupplierEntity>
+
+    @Query("SELECT * FROM suppliers")
+    suspend fun getAll(): List<SupplierEntity>
 
     @Query("SELECT * FROM suppliers where supplierId = :supplierId ")
     suspend fun getById(supplierId: Long): SupplierEntity

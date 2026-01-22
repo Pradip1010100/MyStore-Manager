@@ -37,10 +37,13 @@ class SupplierRepository @Inject constructor(
     suspend fun deactivateSupplier(id: Long) =
         supplierDao.deactivate(id)
 
+    suspend fun activateSupplier(id: Long) =
+        supplierDao.activate(id)
+
     suspend fun getSuppliersWithDue():
             List<Pair<SupplierEntity, Double>> {
 
-        return supplierDao.getActive().map {
+        return supplierDao.getAll().map {
             it to getSupplierDue(it.supplierId)
         }
     }

@@ -1,6 +1,8 @@
 package com.rootlink.mystoremanager.ui.screen.dashboard
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -27,16 +29,30 @@ fun PersonalTransactionEntryScreen(
     viewModel: PersonalTransactionViewModel = hiltViewModel()
 ) {
     val history by viewModel.history.collectAsState()
-
-    var amount by remember { mutableStateOf("") }
-    var title by remember { mutableStateOf("") }
-    var person by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
     var direction by remember { mutableStateOf(TransactionType.OUT) }
 
-    val presetReasons = listOf(
-        "Rent", "Medical", "Grocery", "Loan", "Gift", "Travel", "Other"
-    )
+    var showPaymentDialog by remember { mutableStateOf(false) }
+
+    if(showPaymentDialog){
+        PaymentDialog(
+            action = if (direction == TransactionType.OUT) "Pay" else "Receive",
+            onConfirm = {amount,title,person, paymentMode,note->
+                viewModel.save(
+                    amount = amount.toDouble(),
+                    title = title,
+                    person = person.ifBlank { null },
+                    direction = direction,
+                    paymentMode = paymentMode,
+                    note = note.ifBlank { null }
+                )
+                showPaymentDialog = false
+            },
+            onDismiss = {
+                showPaymentDialog = false
+            }
+        )
+    }
+
 
     Column(
         modifier = Modifier
@@ -54,103 +70,27 @@ fun PersonalTransactionEntryScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        /* ---------------- PAY / RECEIVE ---------------- */
-
-        Row {
-            FilterChip(
-                selected = direction == TransactionType.OUT,
-                onClick = { direction = TransactionType.OUT },
-                label = { Text("Pay") }
-            )
-            Spacer(Modifier.width(8.dp))
-            FilterChip(
-                selected = direction == TransactionType.IN,
-                onClick = { direction = TransactionType.IN },
-                label = { Text("Receive") }
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        /* ---------------- ENTRY FORM ---------------- */
-
-        OutlinedTextField(
-            value = amount,
-            onValueChange = { amount = it },
-            label = { Text("Amount") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text = "Select Reason",
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp
-        )
-
-        Spacer(Modifier.height(6.dp))
-
-        LazyRow {
-            items(presetReasons) { reason ->
-                FilterChip(
-                    selected = title == reason,
-                    onClick = { title = reason },
-                    label = { Text(reason) },
-                    modifier = Modifier.padding(end = 6.dp)
-                )
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = title,
-            onValueChange = { title = it },
-            label = { Text("Reason") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = person,
-            onValueChange = { person = it },
-            label = { Text("Person (optional)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = note,
-            onValueChange = { note = it },
-            label = { Text("Note") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                if (amount.isNotBlank() && title.isNotBlank()) {
-                    viewModel.save(
-                        amount = amount.toDouble(),
-                        title = title,
-                        person = person.ifBlank { null },
-                        direction = direction,
-                        paymentMode = PaymentMode.CASH,
-                        note = note.ifBlank { null }
-                    )
-                    amount = ""
-                    title = ""
-                    person = ""
-                    note = ""
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
+        //Action Buttons
+        Row(
+            modifier = Modifier.padding(4.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Text("Save")
+            Button(
+                onClick = {
+                    direction = TransactionType.OUT
+                    showPaymentDialog = true
+                }
+            ) {
+                Text("Pay")
+            }
+            Button(
+                onClick = {
+                    direction = TransactionType.IN
+                    showPaymentDialog = true
+                }
+            ) {
+                Text("Receive")
+            }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -178,6 +118,138 @@ fun PersonalTransactionEntryScreen(
             }
         }
     }
+}
+
+/*---------------------------------
+PayRecive Dialog
+-----------------------------------*/
+
+@Composable
+fun PaymentDialog(
+    action:String,
+    onDismiss : ()->Unit,
+    onConfirm : (String, String, String, PaymentMode, String)->Unit,
+
+    ){
+    val presetReasons = listOf(
+        "Rent", "Medical", "Grocery", "Loan", "Gift", "Travel", "Other"
+    )
+    var amount by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf("") }
+    var paymentMode by remember { mutableStateOf(PaymentMode.CASH) }
+    var person by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+
+    AlertDialog(
+        title = {Text(action)},
+        text = {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start
+            ) {
+
+                Spacer(Modifier.height(12.dp))
+                /* ---------------- ENTRY FORM ---------------- */
+
+                Text(
+                    text = "Payment Mode",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp
+                )
+
+                Spacer(Modifier.height(6.dp))
+
+                LazyRow {
+                    items(PaymentMode.entries) { mode ->
+                        FilterChip(
+                            selected = paymentMode == mode,
+                            onClick = { paymentMode = mode },
+                            label = { Text(mode.name) },
+                            modifier = Modifier.padding(end = 6.dp)
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("Amount") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text = "Select Reason",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp
+                )
+
+                Spacer(Modifier.height(6.dp))
+
+                LazyRow {
+                    items(presetReasons) { reason ->
+                        FilterChip(
+                            selected = title == reason,
+                            onClick = { title = reason },
+                            label = { Text(reason) },
+                            modifier = Modifier.padding(end = 6.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Reason") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = person,
+                    onValueChange = { person = it },
+                    label = { Text("Person (optional)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Note") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (amount.isNotBlank() && title.isNotBlank()) {
+                        onConfirm(amount,title,person, paymentMode,note)
+                        amount = ""
+                        title = ""
+                        person = ""
+                        note = ""
+                    }
+                }
+            ) {
+                Text("Ok")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text("Cancel")
+            }
+        },
+    )
 }
 
 /* ---------------------------------------------------

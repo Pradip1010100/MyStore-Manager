@@ -8,7 +8,7 @@ import com.rootlink.mystoremanager.data.entity.*
 
 @Database(
     entities = [
-
+        CompanyProfileEntity::class,
         // ---------- WORKERS ----------
         WorkerEntity::class,
         WorkerPaymentEntity::class,
@@ -42,11 +42,11 @@ import com.rootlink.mystoremanager.data.entity.*
         TransactionEntity::class,
         PersonalTransactionEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-
+    abstract fun companyProfileDao(): CompanyProfileDao
     // ---------- WORKERS ----------
     abstract fun workerDao(): WorkerDao
     abstract fun workerPaymentDao(): WorkerPaymentDao

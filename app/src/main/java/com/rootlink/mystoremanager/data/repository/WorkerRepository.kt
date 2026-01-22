@@ -17,6 +17,8 @@ import com.rootlink.mystoremanager.data.enums.TransactionReferenceType
 import com.rootlink.mystoremanager.data.enums.TransactionType
 import com.rootlink.mystoremanager.data.enums.WorkerPaymentStatus
 import com.rootlink.mystoremanager.data.enums.WorkerStatus
+import com.rootlink.mystoremanager.ui.viewmodel.state.SalaryPreview
+import java.time.ZoneId
 import javax.inject.Inject
 
 class WorkerRepository @Inject constructor(
@@ -28,6 +30,10 @@ class WorkerRepository @Inject constructor(
 
     suspend fun getActiveWorkers(): List<WorkerEntity> {
         return workerDao.getActive()
+    }
+
+    suspend fun getAllWorkers(): List<WorkerEntity> {
+        return workerDao.getAll()
     }
 
     suspend fun getWorkerBalance(
@@ -102,6 +108,7 @@ class WorkerRepository @Inject constructor(
         from: Long,
         to: Long
     ): Double {
+
         return when (worker.salaryType) {
 
             SalaryType.DAILY -> {
@@ -115,12 +122,36 @@ class WorkerRepository @Inject constructor(
             }
 
             SalaryType.MONTHLY -> {
-                worker.salaryAmount
+                val presentDays =
+                    workerAttendanceDao.getPresentDays(
+                        worker.workerId,
+                        from,
+                        to
+                    )
+
+                if (presentDays == 0) return 0.0
+
+                val totalDays =
+                    java.time.temporal.ChronoUnit.DAYS
+                        .between(
+                            java.time.Instant.ofEpochMilli(from)
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDate(),
+                            java.time.Instant.ofEpochMilli(to)
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDate()
+                        ) + 1
+
+                val perDaySalary =
+                    worker.salaryAmount / totalDays
+
+                presentDays * perDaySalary
             }
 
-            else -> {0.0}
+            SalaryType.PER_JOB -> 0.0
         }
     }
+
 
     @Transaction
     suspend fun generateSalary(
@@ -162,6 +193,52 @@ class WorkerRepository @Inject constructor(
         )
     }
 
+    suspend fun calculateSalaryPreview(
+        worker: WorkerEntity,
+        from: Long,
+        to: Long
+    ): SalaryPreview {
+
+        val presentDays =
+            workerAttendanceDao.getPresentDays(
+                worker.workerId,
+                from,
+                to
+            )
+
+        val totalDays =
+            java.time.temporal.ChronoUnit.DAYS.between(
+                java.time.Instant.ofEpochMilli(from)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate(),
+                java.time.Instant.ofEpochMilli(to)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+            ).toInt() + 1
+
+        val estimatedSalary =
+            when (worker.salaryType) {
+
+                SalaryType.DAILY ->
+                    presentDays * worker.salaryAmount
+
+                SalaryType.MONTHLY -> {
+                    if (presentDays == 0) 0.0
+                    else {
+                        val perDay = worker.salaryAmount / totalDays
+                        presentDays * perDay
+                    }
+                }
+
+                SalaryType.PER_JOB -> 0.0
+            }
+
+        return SalaryPreview(
+            presentDays = presentDays,
+            totalDays = totalDays,
+            estimatedSalary = estimatedSalary
+        )
+    }
 
 
     suspend fun getPaymentsForWorker(
@@ -178,4 +255,7 @@ class WorkerRepository @Inject constructor(
         workerDao.deactivate(workerId)
     }
 
+    suspend fun activateWorker(workerId: Long) {
+        workerDao.activate(workerId)
+    }
 }

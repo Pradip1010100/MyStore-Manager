@@ -50,7 +50,6 @@ interface StockDao {
         s.lastUpdated AS stock_lastUpdated
     FROM products p
     INNER JOIN stock s ON p.productId = s.productId
-    WHERE p.status = 'ACTIVE'
     ORDER BY p.name
 """)
     suspend fun getStockOverview(): List<StockUi>

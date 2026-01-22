@@ -18,9 +18,15 @@ interface ProductDao {
     @Query("UPDATE products SET status = 'INACTIVE' WHERE productId = :id")
     suspend fun deactivate(id: Long)
 
+    @Query("UPDATE products SET status = 'ACTIVE' WHERE productId = :id")
+    suspend fun activate(id: Long)
+
     @Query("SELECT * FROM products WHERE productId = :id")
     suspend fun getById(id: Long): ProductEntity
 
     @Query("SELECT * FROM products WHERE status = 'ACTIVE'")
     suspend fun getActive(): List<ProductEntity>
+
+    @Query("SELECT * FROM products")
+    suspend fun getAllProducts(): List<ProductEntity>
 }

@@ -58,6 +58,11 @@ class SupplierViewModel @Inject constructor(
         loadSupplierProfile(id)
     }
 
+    fun activateSupplier(id: Long) = viewModelScope.launch {
+        repo.activateSupplier(id)
+        loadSupplierProfile(id)
+    }
+
     fun loadSupplierDetail(supplierId: Long) = viewModelScope.launch {
         val totals = repo.getSupplierTotals(supplierId)
 

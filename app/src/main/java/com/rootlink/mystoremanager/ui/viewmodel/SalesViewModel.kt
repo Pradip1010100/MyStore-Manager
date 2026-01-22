@@ -20,11 +20,14 @@ import javax.inject.Inject
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
+import com.rootlink.mystoremanager.data.entity.CustomerEntity
+import com.rootlink.mystoremanager.data.repository.CompanyRepository
 import com.rootlink.mystoremanager.util.InvoicePdfGenerator
 
 @HiltViewModel
 class SalesViewModel @Inject constructor(
     private val salesRepository: SalesRepository,
+    private val companyRepository: CompanyRepository,
     private val inventoryRepository: InventoryRepository   // ✅ INJECTED
 ) : ViewModel() {
 
@@ -34,6 +37,9 @@ class SalesViewModel @Inject constructor(
     private val _products =
         MutableStateFlow<List<ProductForSaleUi>>(emptyList())
     val products: StateFlow<List<ProductForSaleUi>> = _products
+
+    private val _customers = MutableStateFlow<List<CustomerEntity>>(emptyList())
+    val customers : StateFlow<List<CustomerEntity>> = _customers
 
     /* ---------------- PRODUCTS (FROM DB) ---------------- */
 
@@ -63,16 +69,85 @@ class SalesViewModel @Inject constructor(
             }
         }
     }
+
+    fun loadCustomers(){
+        viewModelScope.launch {
+            _customers.value = salesRepository.getAllCustomers()
+        }
+    }
     /* ---------------- SALES ---------------- */
 
     fun loadSales() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
+
             try {
+                val sales = salesRepository.getAllSales()
+
+                // 1️⃣ Collect unique customerIds
+                val customerIds = sales
+                    .mapNotNull { it.customerId }
+                    .distinct()
+
+                // 2️⃣ Load customers into map
+                val customerMap = mutableMapOf<Long, CustomerEntity>()
+                for (id in customerIds) {
+                    val customer = salesRepository.getCustomerById(id)
+                    customerMap[id] = customer
+                }
+
+                // 3️⃣ Update state
                 _uiState.value = _uiState.value.copy(
-                    sales = salesRepository.getAllSales(),
+                    sales = sales,
+                    customerMap = customerMap,
                     isLoading = false
                 )
+
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message,
+                    isLoading = false
+                )
+            }
+        }
+    }
+
+
+    fun loadInvoice(saleId: Long) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            try {
+                val sale = salesRepository.getSaleById(saleId)
+                val items = salesRepository.getSaleItems(saleId)
+
+                val productNameMap = mutableMapOf<Long, String>()
+                items.map { it.productId }.distinct().forEach { id ->
+                    inventoryRepository.getProduct(id)?.let {
+                        productNameMap[id] = it.name
+                    }
+                }
+
+                val customer =
+                    sale.customerId?.let {
+                        salesRepository.getCustomerById(it)
+                    }
+                val oldBattery =
+                    salesRepository.getOldBatteryBySaleId(saleId)
+
+                val company = companyRepository.getCompany()
+
+                _uiState.value = _uiState.value.copy(
+                    selectedSale = sale,
+                    selectedCustomer = customer,
+                    invoiceItems = items,
+                    productNameMap = productNameMap,
+                    oldBatteryAmount = oldBattery?.amount,
+                    companyProfile = company, // ✅
+                    isLoading = false
+                )
+
+
             } catch (e: Exception) {
                 _uiState.value =
                     _uiState.value.copy(error = e.message, isLoading = false)
@@ -80,47 +155,6 @@ class SalesViewModel @Inject constructor(
         }
     }
 
-    fun loadInvoice(saleId: Long) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-
-            try {
-                // 1️⃣ Sale
-                val sale = salesRepository.getSaleById(saleId)
-
-                // 2️⃣ Sale items
-                val items = salesRepository.getSaleItems(saleId)
-
-                // 3️⃣ Resolve product names
-                val productNameMap = mutableMapOf<Long, String>()
-
-                items
-                    .map { it.productId }
-                    .distinct()
-                    .forEach { productId ->
-                        val product = inventoryRepository.getProduct(productId)
-                        if (product != null) {
-                            productNameMap[productId] = product.name
-                        }
-                    }
-
-                // 4️⃣ Update UI state
-                _uiState.value = _uiState.value.copy(
-                    selectedSale = sale,
-                    invoiceItems = items,
-                    productNameMap = productNameMap,
-                    isLoading = false
-                )
-
-            } catch (e: Exception) {
-                _uiState.value =
-                    _uiState.value.copy(
-                        error = e.message,
-                        isLoading = false
-                    )
-            }
-        }
-    }
 
 
     /* ---------------- CREATE SALE ---------------- */
@@ -128,16 +162,37 @@ class SalesViewModel @Inject constructor(
     fun createSale(
         items: List<SaleItemUi>,
         discount: Double,
-        oldBatteryAmount: Double?
+        oldBatteryAmount: Double?,
+        existingCustomer: CustomerEntity?,
+        manualName: String,
+        manualPhone: String,
+        manualAddress: String
     ) {
         viewModelScope.launch {
             try {
+
+                val customerId =
+                    when {
+                        existingCustomer != null ->
+                            existingCustomer.customerId
+
+                        manualName.isNotBlank() ->
+                            salesRepository.insertCustomer(
+                                CustomerEntity(
+                                    name = manualName,
+                                    phone = manualPhone,
+                                    address = manualAddress.ifBlank { null }
+                                )
+                            )
+
+                        else -> null // walk-in
+                    }
                 val total = items.sumOf { it.quantity * it.price }
 
                 val sale = SaleEntity(
                     saleId = 0L, // ✅ REQUIRED
                     saleDate = System.currentTimeMillis(),
-                    customerId = null,
+                    customerId = customerId,
                     totalAmount = total,
                     discount = discount,
                     finalAmount = total - discount,
@@ -182,6 +237,12 @@ class SalesViewModel @Inject constructor(
         }
     }
 
+    fun loadCompanyProfile() {
+        viewModelScope.launch {
+            val company = companyRepository.getCompany()
+            _uiState.value = _uiState.value.copy(companyProfile = company)
+        }
+    }
 
     //Share PDF
 
@@ -190,13 +251,19 @@ class SalesViewModel @Inject constructor(
         sale: SaleEntity,
         items: List<SaleItemEntity>
     ) {
-        val pdfFile = InvoicePdfGenerator.generate(
-            context,
-            sale,
-            items,
-            _uiState.value.productNameMap
-        )
+        val state = _uiState.value
+        val company = state.companyProfile
+            ?: throw IllegalStateException("Company profile not found")
 
+        val pdfFile = InvoicePdfGenerator.generate(
+            context = context,
+            sale = sale,
+            company = company, // ✅ FIX
+            customer = state.selectedCustomer,
+            items = items,
+            productNameMap = state.productNameMap,
+            oldBatteryAmount = state.oldBatteryAmount
+        )
 
         val uri = FileProvider.getUriForFile(
             context,
@@ -204,14 +271,13 @@ class SalesViewModel @Inject constructor(
             pdfFile
         )
 
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        val intent = Intent(Intent.ACTION_SEND).apply {
             type = "application/pdf"
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
 
-        context.startActivity(
-            Intent.createChooser(shareIntent, "Share Invoice")
-        )
+        context.startActivity(Intent.createChooser(intent, "Share Invoice"))
     }
+
 }

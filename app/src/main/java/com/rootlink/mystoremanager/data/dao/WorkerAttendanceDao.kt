@@ -43,4 +43,14 @@ interface WorkerAttendanceDao {
         end: Long
     ): List<WorkerAttendanceEntity>
 
+    @Query("""
+SELECT COUNT(*) FROM worker_attendance
+WHERE workerId = :workerId
+AND date BETWEEN :from AND :to
+""")
+    suspend fun getWorkingDays(
+        workerId: Long,
+        from: Long,
+        to: Long
+    ): Int
 }
