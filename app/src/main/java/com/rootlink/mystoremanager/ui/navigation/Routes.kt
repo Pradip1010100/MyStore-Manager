@@ -45,6 +45,7 @@ object Routes {
     const val STOCK_OVERVIEW = "stock_overview"
     const val STOCK_ADJUSTMENT = "stock_adjustment/{productId}"
     const val PRODUCT_INVENTORY = "product_inventory/{productId}"
+    const val OLD_BATTERY_LIST = "old_battery_list"
 
     // ✅ NEW
     const val STOCK_HISTORY = "stock_history/{productId}"

@@ -13,4 +13,10 @@ interface OldBatteryDao {
 
     @Query("SELECT * FROM old_batteries WHERE saleId = :saleId LIMIT 1")
     suspend fun getBySaleId(saleId: Long): OldBatteryEntity?
+
+    @Query("""
+        SELECT * FROM old_batteries
+        ORDER BY oldBatteryId DESC
+    """)
+    suspend fun getAll(): List<OldBatteryEntity>
 }

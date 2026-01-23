@@ -55,6 +55,12 @@ fun ProductListScreen(
                 title = { Text("Inventory") },
                 actions = {
                     TextButton(
+                        onClick = { navController.navigate(Routes.OLD_BATTERY_LIST) }
+                    ) {
+                        Text("Old Batteries")
+                    }
+
+                    TextButton(
                         onClick = { navController.navigate(Routes.LOW_STOCK) }
                     ) {
                         Text("Low Stock")

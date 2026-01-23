@@ -70,8 +70,8 @@ interface StockDao {
 
     @Query("""
     SELECT COUNT(*)
-    FROM stock
-    WHERE quantityOnHand <= :limit
+    FROM stock as s INNER JOIN products as p ON p.productId = s.productId
+    WHERE s.quantityOnHand <= :limit AND p.status = "ACTIVE"
 """)
     suspend fun getLowStockCount(limit: Double): Int
 

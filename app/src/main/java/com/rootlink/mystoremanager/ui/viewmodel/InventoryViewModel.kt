@@ -3,6 +3,7 @@ package com.rootlink.mystoremanager.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rootlink.mystoremanager.data.entity.OldBatteryEntity
 import com.rootlink.mystoremanager.data.entity.ProductCategoryEntity
 import com.rootlink.mystoremanager.data.entity.ProductEntity
 import com.rootlink.mystoremanager.data.entity.StockAdjustmentEntity
@@ -128,4 +129,15 @@ class InventoryViewModel @Inject constructor(
             )
         )
     }
+
+    /* ---------- OLD BATTERIES ---------- */
+
+    private val _oldBatteries =
+        MutableStateFlow<List<OldBatteryEntity>>(emptyList())
+    val oldBatteries = _oldBatteries.asStateFlow()
+
+    fun loadOldBatteries() = viewModelScope.launch {
+        _oldBatteries.value = repository.getAllOldBatteries()
+    }
+
 }

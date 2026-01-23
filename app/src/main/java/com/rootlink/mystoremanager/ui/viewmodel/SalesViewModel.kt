@@ -162,7 +162,12 @@ class SalesViewModel @Inject constructor(
     fun createSale(
         items: List<SaleItemUi>,
         discount: Double,
-        oldBatteryAmount: Double?,
+        hasOldBattery: Boolean,
+        batteryType: String,
+        batteryQty: Int,
+        batteryWeight: Double,
+        batteryRate: Double,
+        batteryAmount: Double,
         existingCustomer: CustomerEntity?,
         manualName: String,
         manualPhone: String,
@@ -185,17 +190,19 @@ class SalesViewModel @Inject constructor(
                                 )
                             )
 
-                        else -> null // walk-in
+                        else -> null
                     }
+
                 val total = items.sumOf { it.quantity * it.price }
 
                 val sale = SaleEntity(
-                    saleId = 0L, // ✅ REQUIRED
+                    saleId = 0L,
                     saleDate = System.currentTimeMillis(),
                     customerId = customerId,
                     totalAmount = total,
                     discount = discount,
-                    finalAmount = total - discount,
+                    finalAmount =
+                        total - discount - if (hasOldBattery) batteryAmount else 0.0,
                     paymentStatus = PaymentStatus.PAID
                 )
 
@@ -210,22 +217,23 @@ class SalesViewModel @Inject constructor(
                     )
                 }
 
-                val oldBattery = oldBatteryAmount?.let {
-                    OldBatteryEntity(
-                        oldBatteryId = 0L,
-                        saleId = 0L,
-                        batteryType = "",
-                        quantity = 0,
-                        weight = 0.0,
-                        rate = 0.0,
-                        amount = it
-                    )
-                }
+                val oldBattery =
+                    if (hasOldBattery && batteryAmount > 0) {
+                        OldBatteryEntity(
+                            oldBatteryId = 0L,
+                            saleId = 0L,
+                            batteryType = batteryType,
+                            quantity = batteryQty,
+                            weight = batteryWeight,
+                            rate = batteryRate,
+                            amount = batteryAmount
+                        )
+                    } else null
 
                 salesRepository.createSale(
-                    sale,
-                    saleItems,
-                    oldBattery
+                    sale = sale,
+                    items = saleItems,
+                    oldBattery = oldBattery
                 )
 
                 loadSales()
@@ -236,6 +244,7 @@ class SalesViewModel @Inject constructor(
             }
         }
     }
+
 
     fun loadCompanyProfile() {
         viewModelScope.launch {

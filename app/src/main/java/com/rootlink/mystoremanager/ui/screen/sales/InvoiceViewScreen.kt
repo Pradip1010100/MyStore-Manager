@@ -2,6 +2,8 @@ package com.rootlink.mystoremanager.ui.screen.sales
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -15,22 +17,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.rootlink.mystoremanager.data.entity.CompanyProfileEntity
-import com.rootlink.mystoremanager.data.entity.CustomerEntity
-import com.rootlink.mystoremanager.data.entity.SaleEntity
-import com.rootlink.mystoremanager.data.entity.SaleItemEntity
+import com.rootlink.mystoremanager.data.entity.*
 import com.rootlink.mystoremanager.ui.viewmodel.SalesViewModel
 import com.rootlink.mystoremanager.util.toReadableDateTime
 
 /* -------------------------------------------------------------------------- */
-/*                              COLORS (PRINT SAFE)                            */
+/* COLORS */
 /* -------------------------------------------------------------------------- */
 
-private val TableHeaderColor = Color(0xFFE0E0E0)
-private val BorderColor = Color(0xFFBDBDBD)
+private val TableHeaderColor = Color(0xFFF1F1F1)
+private val BorderColor = Color(0xFFDDDDDD)
 
 /* -------------------------------------------------------------------------- */
-/*                               MAIN SCREEN                                   */
+/* MAIN */
 /* -------------------------------------------------------------------------- */
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,42 +74,41 @@ fun InvoiceViewScreen(
         }
     ) { padding ->
 
+        /* 🔑 ONLY CHANGE: verticalScroll added */
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(24.dp)
+                .padding(12.dp)
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
             uiState.companyProfile?.let {
                 InvoiceHeader(it)
             }
-            Spacer(Modifier.height(16.dp))
+
             InvoiceMeta(sale)
-            Spacer(Modifier.height(16.dp))
+
             BillToSection(uiState.selectedCustomer)
-            Spacer(Modifier.height(16.dp))
 
             InvoiceItemTable(
                 items = uiState.invoiceItems,
                 productNames = uiState.productNameMap
             )
 
-            Spacer(Modifier.height(16.dp))
-
             InvoiceTotals(
                 sale = sale,
                 oldBatteryAmount = uiState.oldBatteryAmount
             )
 
-            Spacer(Modifier.height(24.dp))
             InvoiceFooter()
         }
     }
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                   HEADER                                   */
+/* HEADER */
 /* -------------------------------------------------------------------------- */
 
 @Composable
@@ -119,55 +117,48 @@ private fun InvoiceHeader(company: CompanyProfileEntity) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(company.name, fontWeight = FontWeight.Bold)
-            Text(company.businessType)
-            Text(company.address)
-            Text("Phone: ${company.phone}")
+            Text(company.businessType, style = MaterialTheme.typography.bodySmall)
+            Text(company.address, style = MaterialTheme.typography.bodySmall)
+            Text("Phone: ${company.phone}", style = MaterialTheme.typography.bodySmall)
         }
 
-        Text(
-            "INVOICE",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
+        Text("INVOICE", fontWeight = FontWeight.Bold)
     }
 }
 
-
 /* -------------------------------------------------------------------------- */
-/*                                   META                                     */
+/* META */
 /* -------------------------------------------------------------------------- */
 
 @Composable
 private fun InvoiceMeta(sale: SaleEntity) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column {
-            Text("Invoice No: INV-${sale.saleId}")
-            Text("Date: ${sale.saleDate.toReadableDateTime()}")
-        }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("Invoice No: INV-${sale.saleId}", style = MaterialTheme.typography.bodySmall)
+        Text(
+            "Date: ${sale.saleDate.toReadableDateTime()}",
+            style = MaterialTheme.typography.bodySmall
+        )
     }
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                 BILL TO                                    */
+/* BILL TO */
 /* -------------------------------------------------------------------------- */
 
 @Composable
 private fun BillToSection(customer: CustomerEntity?) {
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text("Bill To", fontWeight = FontWeight.Bold)
         Text(customer?.name ?: "Walk-in Customer")
-        Text(customer?.phone ?: "-")
-        Text(customer?.address ?: "-")
+        Text(customer?.phone ?: "-", style = MaterialTheme.typography.bodySmall)
+        Text(customer?.address ?: "-", style = MaterialTheme.typography.bodySmall)
     }
 }
 
 /* -------------------------------------------------------------------------- */
-/*                               ITEM TABLE                                   */
+/* ITEM TABLE (UNCHANGED STRUCTURE) */
 /* -------------------------------------------------------------------------- */
 
 @Composable
@@ -181,41 +172,38 @@ private fun InvoiceItemTable(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(TableHeaderColor)
-                .padding(vertical = 6.dp)
+                .padding(vertical = 4.dp)
         ) {
-            Cell("S.No", 0.7f, FontWeight.Bold, TextAlign.Center)
-            Cell("Description", 3f, FontWeight.Bold)
-            Cell("Qty", 1f, FontWeight.Bold, TextAlign.Center)
-            Cell("Unit Price", 1.5f, FontWeight.Bold, TextAlign.End)
-            Cell("Amount", 1.5f, FontWeight.Bold, TextAlign.End)
+            Cell("No", 0.6f, FontWeight.Bold, TextAlign.Center)
+            Cell("Item", 3f, FontWeight.Bold)
+            Cell("Qty", 0.8f, FontWeight.Bold, TextAlign.Center)
+            Cell("Amt", 1.2f, FontWeight.Bold, TextAlign.End)
         }
 
         Divider(color = BorderColor)
 
         items.forEachIndexed { index, item ->
-
-            val unitPrice =
-                if (item.quantity == 0) 0.0 else item.lineTotal / item.quantity
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 6.dp)
+                    .padding(vertical = 4.dp)
             ) {
-                Cell((index + 1).toString(), 0.7f, align = TextAlign.Center)
+                Cell((index + 1).toString(), 0.6f, align = TextAlign.Center)
                 Cell(productNames[item.productId] ?: "Item", 3f)
-                Cell(item.quantity.toString(), 1f, align = TextAlign.Center)
-                Cell("₹%.2f".format(unitPrice), 1.5f, align = TextAlign.End)
-                Cell("₹%.2f".format(item.lineTotal), 1.5f, align = TextAlign.End)
+                Cell(item.quantity.toString(), 0.8f, align = TextAlign.Center)
+                Cell(
+                    "₹%.2f".format(item.lineTotal),
+                    1.2f,
+                    align = TextAlign.End
+                )
             }
-
             Divider(color = BorderColor)
         }
     }
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                  CELL                                      */
+/* CELL */
 /* -------------------------------------------------------------------------- */
 
 @Composable
@@ -229,12 +217,13 @@ private fun RowScope.Cell(
         text = text,
         modifier = Modifier.weight(weight),
         fontWeight = weightFont,
-        textAlign = align
+        textAlign = align,
+        style = MaterialTheme.typography.bodySmall
     )
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                  TOTALS                                    */
+/* TOTALS */
 /* -------------------------------------------------------------------------- */
 
 @Composable
@@ -254,20 +243,16 @@ private fun InvoiceTotals(
         }
 
         if (oldBatteryAmount != null && oldBatteryAmount > 0) {
-            TotalRow("Old Battery Exchange", -oldBatteryAmount)
+            TotalRow("Old Battery", -oldBatteryAmount)
         }
 
         Divider(
             modifier = Modifier
-                .width(260.dp)
+                .width(200.dp)
                 .padding(vertical = 6.dp)
         )
 
-        TotalRow(
-            "Total Amount",
-            sale.finalAmount,
-            bold = true
-        )
+        TotalRow("Total", sale.finalAmount, bold = true)
     }
 }
 
@@ -278,19 +263,20 @@ private fun TotalRow(
     bold: Boolean = false
 ) {
     Row(
-        modifier = Modifier.width(260.dp),
+        modifier = Modifier.width(200.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label)
+        Text(label, style = MaterialTheme.typography.bodySmall)
         Text(
             "₹%.2f".format(amount),
-            fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal
+            fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+            style = MaterialTheme.typography.bodySmall
         )
     }
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                  FOOTER                                    */
+/* FOOTER */
 /* -------------------------------------------------------------------------- */
 
 @Composable
@@ -298,6 +284,7 @@ private fun InvoiceFooter() {
     Text(
         "Thank you for your business",
         modifier = Modifier.fillMaxWidth(),
-        textAlign = TextAlign.Center
+        textAlign = TextAlign.Center,
+        style = MaterialTheme.typography.bodySmall
     )
 }

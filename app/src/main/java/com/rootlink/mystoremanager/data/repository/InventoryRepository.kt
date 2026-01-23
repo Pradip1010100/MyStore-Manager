@@ -1,11 +1,13 @@
 package com.rootlink.mystoremanager.data.repository
 
 import androidx.room.Transaction
+import com.rootlink.mystoremanager.data.dao.OldBatteryDao
 import com.rootlink.mystoremanager.data.dao.ProductCategoryDao
 import com.rootlink.mystoremanager.data.dao.ProductDao
 import com.rootlink.mystoremanager.data.dao.StockAdjustmentDao
 import com.rootlink.mystoremanager.data.dao.StockDao
 import com.rootlink.mystoremanager.data.dao.TransactionDao
+import com.rootlink.mystoremanager.data.entity.OldBatteryEntity
 import com.rootlink.mystoremanager.data.entity.ProductCategoryEntity
 import com.rootlink.mystoremanager.data.entity.ProductEntity
 import com.rootlink.mystoremanager.data.entity.StockAdjustmentEntity
@@ -19,7 +21,8 @@ class InventoryRepository @Inject constructor(
     private val productCategoryDao: ProductCategoryDao,
     private val stockDao: StockDao,
     private val stockAdjustmentDao: StockAdjustmentDao,
-    private val transactionDao: TransactionDao
+    private val transactionDao: TransactionDao,
+    private val oldBatteryDao: OldBatteryDao
 ) {
 
     /* ---------- CATEGORY ---------- */
@@ -65,6 +68,8 @@ class InventoryRepository @Inject constructor(
 
     suspend fun getLowStock(limit: Double) =
         stockDao.getLowStock(limit)
+    suspend fun getAllOldBatteries(): List<OldBatteryEntity> =
+        oldBatteryDao.getAll()
 
     @Transaction
     suspend fun adjustStock(adjustment: StockAdjustmentEntity) {

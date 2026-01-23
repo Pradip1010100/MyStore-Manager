@@ -230,6 +230,11 @@ fun AppNavGraph(
             composable(Routes.LOW_STOCK) {
                 LowStockScreen()
             }
+
+            composable(Routes.OLD_BATTERY_LIST) {
+                OldBatteryListScreen(navController)
+            }
+
         }
 
         // ================= ACCOUNTING =================
