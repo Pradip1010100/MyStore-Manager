@@ -152,6 +152,13 @@ class WorkerViewModel @Inject constructor(
         }
     }
 
+    fun updateWorker(worker: WorkerEntity) {
+        viewModelScope.launch {
+            workerRepository.updateWorker(worker)
+            loadWorker(worker.workerId)
+        }
+    }
+
 
     fun loadWorker(workerId: Long) {
         viewModelScope.launch {

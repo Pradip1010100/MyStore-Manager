@@ -77,7 +77,11 @@ class WorkerRepository @Inject constructor(
     suspend fun addWorker(worker: WorkerEntity) {
         workerDao.insert(worker)
     }
-    
+
+    suspend fun updateWorker(worker: WorkerEntity) {
+        workerDao.update(worker)
+    }
+
 
     suspend fun markAttendance(
         attendance: WorkerAttendanceEntity

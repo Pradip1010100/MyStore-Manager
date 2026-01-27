@@ -68,8 +68,12 @@ class InventoryRepository @Inject constructor(
 
     suspend fun getLowStock(limit: Double) =
         stockDao.getLowStock(limit)
-    suspend fun getAllOldBatteries(): List<OldBatteryEntity> =
-        oldBatteryDao.getAll()
+
+    suspend fun getAllOldBatteries(): List<OldBatteryEntity> = oldBatteryDao.getAll()
+
+    suspend fun addOldBattery(oldBatteryEntity: OldBatteryEntity) = oldBatteryDao.insert(oldBatteryEntity)
+
+    suspend fun updateOldBattery(oldBatteryEntity: OldBatteryEntity) = oldBatteryDao.update(oldBatteryEntity)
 
     @Transaction
     suspend fun adjustStock(adjustment: StockAdjustmentEntity) {

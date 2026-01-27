@@ -3,6 +3,7 @@ package com.rootlink.mystoremanager.data.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.rootlink.mystoremanager.data.entity.OldBatteryEntity
 
 @Dao
@@ -19,4 +20,7 @@ interface OldBatteryDao {
         ORDER BY oldBatteryId DESC
     """)
     suspend fun getAll(): List<OldBatteryEntity>
+
+    @Update
+    suspend fun update(oldBattery: OldBatteryEntity)
 }

@@ -139,5 +139,13 @@ class InventoryViewModel @Inject constructor(
     fun loadOldBatteries() = viewModelScope.launch {
         _oldBatteries.value = repository.getAllOldBatteries()
     }
+    fun addOldBattery(battery: OldBatteryEntity) = viewModelScope.launch {
+        repository.addOldBattery(battery)
+        loadOldBatteries()
+    }
 
+    fun updateOldBattery(battery: OldBatteryEntity) = viewModelScope.launch {
+        repository.updateOldBattery(battery)
+        loadOldBatteries()
+    }
 }

@@ -58,7 +58,6 @@ fun CreateSaleScreen(navController: NavController) {
 
     var discount by rememberSaveable { mutableStateOf("") }
     var hasOldBattery by rememberSaveable { mutableStateOf(false) }
-    var oldBatteryAmount by rememberSaveable { mutableStateOf("") }
 
     val subtotal = saleItems.sumOf { it.quantity * it.price }
     val discountValue = discount.toDoubleOrNull() ?: 0.0
@@ -78,6 +77,21 @@ fun CreateSaleScreen(navController: NavController) {
                     (batteryRate.toDoubleOrNull() ?: 0.0)
         else 0.0
     val finalAmount = subtotal - discountValue - oldBatteryValue
+
+
+    var obName by rememberSaveable { mutableStateOf("") }
+    var obBrand by rememberSaveable { mutableStateOf("") }
+    var obType by rememberSaveable { mutableStateOf("") }
+    var obQty by rememberSaveable { mutableStateOf("") }
+    var obRate by rememberSaveable { mutableStateOf("") }
+    var obNote by rememberSaveable { mutableStateOf("") }
+
+    val oldBatteryAmount =
+        if (hasOldBattery)
+            (obQty.toIntOrNull() ?: 0) *
+                    (obRate.toDoubleOrNull() ?: 0.0)
+        else 0.0
+
 
     Scaffold(
         topBar = {
@@ -236,15 +250,12 @@ fun CreateSaleScreen(navController: NavController) {
                 }
 
                 AnimatedVisibility(hasOldBattery) {
-                    OutlinedTextField(
-                        value = oldBatteryAmount,
-                        onValueChange = { oldBatteryAmount = it },
-                        label = { Text("Old Battery Amount") },
-                        keyboardOptions =
-                            KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
+                    Text(
+                        text = "Old Battery Amount: ₹%.2f".format(oldBatteryAmount),
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
+
             }
         }
     }
@@ -292,12 +303,13 @@ fun CreateSaleScreen(navController: NavController) {
 
     if (showOldBatteryDialog) {
         OldBatteryDialog(
-            onSave = { type, qty, weight, rate, amount ->
-                batteryType = type
-                batteryQty = qty.toString()
-                batteryWeight = weight.toString()
-                batteryRate = rate.toString()
-                oldBatteryAmount = amount.toString()
+            onSave = { name, brand, type, qty, rate, note ->
+                obName = name
+                obBrand = brand
+                obType = type
+                obQty = qty.toString()
+                obRate = rate.toString()
+                obNote = note ?: ""
                 showOldBatteryDialog = false
             },
             onDismiss = {
@@ -307,35 +319,54 @@ fun CreateSaleScreen(navController: NavController) {
         )
     }
 
+
 }
 
 @Composable
 fun OldBatteryDialog(
     onSave: (
+        name: String,
+        brand: String,
         type: String,
         qty: Int,
-        weight: Double,
         rate: Double,
-        amount: Double
+        note: String?
     ) -> Unit,
     onDismiss: () -> Unit
 ) {
+    var name by remember { mutableStateOf("") }
+    var brand by remember { mutableStateOf("") }
     var type by remember { mutableStateOf("") }
     var qty by remember { mutableStateOf("") }
-    var weight by remember { mutableStateOf("") }
     var rate by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
 
-    val amount =
-        (qty.toIntOrNull() ?: 0) *
-                (weight.toDoubleOrNull() ?: 0.0) *
-                (rate.toDoubleOrNull() ?: 0.0)
-
+    val quantity = qty.toIntOrNull() ?: 0
+    val r = rate.toDoubleOrNull() ?: 0.0
+    val amount = quantity * r
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Old Battery Details") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Battery Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = brand,
+                    onValueChange = { brand = it },
+                    label = { Text("Brand") },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 OutlinedTextField(
                     value = type,
@@ -348,31 +379,29 @@ fun OldBatteryDialog(
                     value = qty,
                     onValueChange = { qty = it },
                     label = { Text("Quantity") },
-                    keyboardOptions =
-                        KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = weight,
-                    onValueChange = { weight = it },
-                    label = { Text("Weight (kg)") },
-                    keyboardOptions =
-                        KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = rate,
                     onValueChange = { rate = it },
-                    label = { Text("Rate / kg") },
-                    keyboardOptions =
-                        KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    label = { Text("Rate (per battery)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Note (optional)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Divider()
+
                 Text(
-                    "Amount: ₹%.2f".format(amount),
+                    text = "Amount: ₹%.2f".format(amount),
                     style = MaterialTheme.typography.titleMedium
                 )
             }
@@ -380,17 +409,19 @@ fun OldBatteryDialog(
         confirmButton = {
             Button(
                 enabled =
-                    type.isNotBlank() &&
-                            qty.toIntOrNull() != null &&
-                            weight.toDoubleOrNull() != null &&
-                            rate.toDoubleOrNull() != null,
+                    name.isNotBlank() &&
+                            brand.isNotBlank() &&
+                            type.isNotBlank() &&
+                            quantity > 0 &&
+                            r > 0,
                 onClick = {
                     onSave(
-                        type,
-                        qty.toInt(),
-                        weight.toDouble(),
-                        rate.toDouble(),
-                        amount
+                        name = name,
+                        brand = brand,
+                        type = type,
+                        qty = quantity,
+                        rate = r,
+                        note = note.ifBlank { null }
                     )
                 }
             ) {

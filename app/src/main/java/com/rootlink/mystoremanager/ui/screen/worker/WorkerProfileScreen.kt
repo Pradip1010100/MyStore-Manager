@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
@@ -24,16 +25,20 @@ import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -50,6 +55,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -57,6 +63,7 @@ import androidx.navigation.NavController
 import com.rootlink.mystoremanager.data.entity.WorkerEntity
 import com.rootlink.mystoremanager.data.enums.AttendanceStatus
 import com.rootlink.mystoremanager.data.enums.SalaryType
+import com.rootlink.mystoremanager.data.enums.WorkerStatus
 import com.rootlink.mystoremanager.ui.viewmodel.WorkerViewModel
 import com.rootlink.mystoremanager.ui.viewmodel.state.WorkerUiState
 import java.time.LocalDate
@@ -70,6 +77,7 @@ fun WorkerProfileScreen(
     viewModel: WorkerViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showEditDialog by remember { mutableStateOf(false) }
 
     val workerId =
         navController.currentBackStackEntry
@@ -128,7 +136,8 @@ fun WorkerProfileScreen(
                     /* ================= QUICK ACTIONS ================= */
                     ActionGrid(
                         worker = worker,
-                        navController = navController
+                        navController = navController,
+                        onEditClick = { showEditDialog = true }
                     )
 
                     /* ================= ATTENDANCE CALENDAR ================= */
@@ -192,7 +201,187 @@ fun WorkerProfileScreen(
             }
         }
     }
+    if (showEditDialog && worker!=null) {
+        EditWorkerDialog(
+            worker = worker,
+            onDismiss = { showEditDialog = false },
+            onSave = { updatedWorker ->
+                viewModel.updateWorker(updatedWorker)
+                showEditDialog = false
+            }
+        )
+    }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditWorkerDialog(
+    worker: WorkerEntity,
+    onDismiss: () -> Unit,
+    onSave: (WorkerEntity) -> Unit
+) {
+
+    /* -------------------------
+       STATE (MATCHES ADD SCREEN)
+     ------------------------- */
+    var name by remember { mutableStateOf(worker.name) }
+    var phone by remember { mutableStateOf(worker.phone ?: "") }
+    var email by remember { mutableStateOf(worker.email ?: "") }
+    var address by remember { mutableStateOf(worker.address ?: "") }
+
+    var team by remember { mutableStateOf(worker.team ?: "") }
+    var position by remember { mutableStateOf(worker.position ?: "") }
+
+    var salaryType by remember { mutableStateOf(worker.salaryType) }
+    var salaryAmount by remember {
+        mutableStateOf(worker.salaryAmount.toString())
+    }
+
+    var status by remember { mutableStateOf(worker.status) }
+
+    var dob by remember { mutableStateOf(worker.dob) }
+    var joinDate by remember { mutableStateOf(worker.joinedAt) }
+    var leaveDate by remember { mutableStateOf(worker.leftAt) }
+
+    var notes by remember { mutableStateOf(worker.notes ?: "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Worker") },
+
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                /* BASIC INFO */
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Mobile Number") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { Text("Address") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                /* TEAM & POSITION */
+                OutlinedTextField(
+                    value = team,
+                    onValueChange = { team = it },
+                    label = { Text("Team / Department") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = position,
+                    onValueChange = { position = it },
+                    label = { Text("Position / Role") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+
+                /* SALARY TYPE */
+                Text("Salary Type", style = MaterialTheme.typography.titleSmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SalaryType.entries.forEach {
+                        FilterChip(
+                            selected = salaryType == it,
+                            onClick = { salaryType = it },
+                            label = { Text(it.name) }
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = salaryAmount,
+                    onValueChange = { salaryAmount = it },
+                    label = { Text("Salary Amount") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                /* STATUS */
+                Text("Status", style = MaterialTheme.typography.titleSmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    WorkerStatus.entries.forEach {
+                        FilterChip(
+                            selected = status == it,
+                            onClick = { status = it },
+                            label = { Text(it.name) }
+                        )
+                    }
+                }
+
+                /* NOTES */
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+
+        confirmButton = {
+            Button(
+                onClick = {
+                    val amount = salaryAmount.toDoubleOrNull()
+                        ?: return@Button
+
+                    onSave(
+                        worker.copy(
+                            name = name.trim(),
+                            phone = phone.ifBlank { null },
+                            email = email.ifBlank { null },
+                            address = address.ifBlank { null },
+                            team = team.ifBlank { null },
+                            position = position.ifBlank { null },
+                            salaryType = salaryType,
+                            salaryAmount = amount,
+                            defaultRate = amount,
+                            status = status,
+                            dob = dob,
+                            joinedAt = joinDate,
+                            leftAt = leaveDate,
+                            notes = notes.ifBlank { null }
+                        )
+                    )
+                }
+            ) {
+                Text("Save")
+            }
+        },
+
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
 
 @Composable
 private fun ProfileHeader(worker: WorkerEntity) {
@@ -233,7 +422,8 @@ private fun ProfileHeader(worker: WorkerEntity) {
 @Composable
 private fun ActionGrid(
     worker: WorkerEntity,
-    navController: NavController
+    navController: NavController,
+    onEditClick: () -> Unit
 ) {
     val isActive = worker.status.name == "ACTIVE"
 
@@ -266,6 +456,14 @@ private fun ActionGrid(
                     navController.navigate(
                         "worker_ledger/${worker.workerId}"
                     )
+                }
+
+                /* ----------Edit --------------- */
+                ActionIcon(
+                    icon = Icons.Default.PersonAdd,
+                    label = "Edit"
+                ) {
+                    onEditClick()
                 }
             }
         }

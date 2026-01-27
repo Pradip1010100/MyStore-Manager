@@ -141,7 +141,6 @@ fun SupplierDetailScreen(
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
-
             }
 
             Spacer(Modifier.height(28.dp))
