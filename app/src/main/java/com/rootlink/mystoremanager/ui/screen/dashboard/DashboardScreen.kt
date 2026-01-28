@@ -53,7 +53,22 @@ fun DashboardScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Dashboard") })
+            TopAppBar(
+                title = { Text("Dashboard") },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            navController.navigate(Routes.COMPANY_PROFILE)
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.AccountCircle,
+                            contentDescription = "Company Profile"
+                        )
+                    }
+                }
+            )
+
         }
     ) { padding ->
 

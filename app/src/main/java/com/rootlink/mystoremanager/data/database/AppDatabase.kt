@@ -42,7 +42,7 @@ import com.rootlink.mystoremanager.data.entity.*
         TransactionEntity::class,
         PersonalTransactionEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

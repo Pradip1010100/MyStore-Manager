@@ -3,7 +3,9 @@ package com.rootlink.mystoremanager.ui.screen.inventory
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
@@ -108,7 +110,6 @@ fun OldBatteryListScreen(
 /* -------------------------------------------------------------------------- */
 /* ROW */
 /* -------------------------------------------------------------------------- */
-
 @Composable
 private fun OldBatteryRow(
     battery: OldBatteryEntity,
@@ -121,7 +122,7 @@ private fun OldBatteryRow(
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top
         ) {
 
             Column(modifier = Modifier.weight(1f)) {
@@ -129,17 +130,18 @@ private fun OldBatteryRow(
                 Text(
                     text =
                         if (battery.saleId != null)
-                            "Sale #${battery.saleId}"
+                            "Linked to Sale #${battery.saleId}"
                         else
                             "Direct Entry",
-                    style = MaterialTheme.typography.titleSmall
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
                 )
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
 
                 Text(
                     "${battery.name} • ${battery.brand}",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.titleSmall
                 )
 
                 Text(
@@ -147,23 +149,46 @@ private fun OldBatteryRow(
                     style = MaterialTheme.typography.bodySmall
                 )
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
 
                 Text(
-                    "Qty: ${battery.quantity} × ₹${battery.rate}",
+                    "Quantity: ${battery.quantity}",
                     style = MaterialTheme.typography.bodySmall
                 )
 
-                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Rate: ₹${battery.rate}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                battery.weight?.let {
+                    Text(
+                        "Weight: $it",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                battery.note?.let {
+                    Text(
+                        "Note: $it",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(Modifier.height(6.dp))
 
                 Text(
                     "Amount: ₹%.2f".format(battery.amount),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
 
-            IconButton(onClick = onEdit) {
+            IconButton(
+                enabled = battery.saleId == null, // 🔒 lock sale-linked entries
+                onClick = onEdit
+            ) {
                 Icon(Icons.Default.Edit, contentDescription = "Edit")
             }
         }
@@ -183,20 +208,41 @@ fun OldBatteryDialog(
     var name by remember { mutableStateOf(battery?.name ?: "") }
     var brand by remember { mutableStateOf(battery?.brand ?: "") }
     var type by remember { mutableStateOf(battery?.batteryType ?: "") }
+
     var qty by remember { mutableStateOf(battery?.quantity?.toString() ?: "") }
     var rate by remember { mutableStateOf(battery?.rate?.toString() ?: "") }
+    var weight by remember { mutableStateOf(battery?.weight?.toString() ?: "") }
+    var note by remember { mutableStateOf(battery?.note ?: "") }
 
     val quantity = qty.toIntOrNull() ?: 0
-    val r = rate.toDoubleOrNull() ?: 0.0
-    val amount = quantity * r
+    val rateValue = rate.toDoubleOrNull() ?: 0.0
+    val weightValue = weight.toDoubleOrNull()
+
+    val amount = quantity * rateValue
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(if (battery == null) "Add Old Battery" else "Edit Old Battery")
+            Text(
+                if (battery == null)
+                    "Add Old Battery"
+                else
+                    "Edit Old Battery"
+            )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+
+                if (battery?.saleId != null) {
+                    Text(
+                        "Linked to Sale #${battery.saleId}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
 
                 OutlinedTextField(
                     value = name,
@@ -235,6 +281,23 @@ fun OldBatteryDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                OutlinedTextField(
+                    value = weight,
+                    onValueChange = { weight = it },
+                    label = { Text("Weight (optional)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Note (optional)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Divider()
+
                 Text(
                     "Amount: ₹%.2f".format(amount),
                     style = MaterialTheme.typography.titleMedium
@@ -248,17 +311,19 @@ fun OldBatteryDialog(
                             brand.isNotBlank() &&
                             type.isNotBlank() &&
                             quantity > 0 &&
-                            r > 0,
+                            rateValue > 0,
                 onClick = {
                     onSave(
                         OldBatteryEntity(
                             oldBatteryId = battery?.oldBatteryId ?: 0L,
-                            saleId = battery?.saleId,   // null allowed
-                            name = name,
-                            brand = brand,
-                            batteryType = type,
+                            saleId = battery?.saleId, // preserved
+                            name = name.trim(),
+                            brand = brand.trim(),
+                            batteryType = type.trim(),
                             quantity = quantity,
-                            rate = r
+                            rate = rateValue,
+                            weight = weightValue,
+                            note = note.trim().ifBlank { null }
                         )
                     )
                 }

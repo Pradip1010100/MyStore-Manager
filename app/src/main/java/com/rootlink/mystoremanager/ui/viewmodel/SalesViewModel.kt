@@ -158,21 +158,24 @@ class SalesViewModel @Inject constructor(
 
 
     /* ---------------- CREATE SALE ---------------- */
-
     fun createSale(
         items: List<SaleItemUi>,
         discount: Double,
-        hasOldBattery: Boolean,
-        batteryType: String,
-        batteryQty: Int,
-        batteryWeight: Double,
-        batteryRate: Double,
-        batteryAmount: Double,
         existingCustomer: CustomerEntity?,
         manualName: String,
         manualPhone: String,
-        manualAddress: String
-    ) {
+        manualAddress: String,
+
+        hasOldBattery: Boolean,
+        obName: String,
+        obBrand: String,
+        obType: String,
+        obQty: Int,
+        obRate: Double,
+        obWeight: Double?,
+        obNote: String?
+    )
+ {
         viewModelScope.launch {
             try {
 
@@ -201,10 +204,26 @@ class SalesViewModel @Inject constructor(
                     customerId = customerId,
                     totalAmount = total,
                     discount = discount,
-                    finalAmount =
-                        total - discount - if (hasOldBattery) batteryAmount else 0.0,
+                    finalAmount = total - discount -
+                            if (hasOldBattery) obQty * obRate else 0.0,
                     paymentStatus = PaymentStatus.PAID
                 )
+
+                val oldBattery =
+                    if (hasOldBattery && obQty > 0 && obRate > 0) {
+                        OldBatteryEntity(
+                            oldBatteryId = 0L,
+                            saleId = null,          // ✅ FIX (IMPORTANT)
+                            name = obName,
+                            brand = obBrand,
+                            batteryType = obType,
+                            quantity = obQty,
+                            rate = obRate,
+                            weight = obWeight,      // ✅ WILL NOW SAVE
+                            note = obNote
+                        )
+                    } else null
+
 
                 val saleItems = items.map {
                     SaleItemEntity(
@@ -216,20 +235,6 @@ class SalesViewModel @Inject constructor(
                         lineTotal = it.quantity * it.price
                     )
                 }
-
-                val oldBattery =
-                    if (hasOldBattery && batteryAmount > 0) {
-                        OldBatteryEntity(
-                            oldBatteryId = 0L,
-                            saleId = 0L,
-                            batteryType = batteryType,
-                            quantity = batteryQty,
-                            weight = batteryWeight,
-                            rate = batteryRate,
-                            amount = batteryAmount
-                        )
-                    } else null
-
                 salesRepository.createSale(
                     sale = sale,
                     items = saleItems,

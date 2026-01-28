@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
+
+    <!-- External app files (used for backup DB) -->
+    <external-files-path
+        name="external_files"
+        path="." />
+
+    <!-- Optional: cache support -->
     <cache-path
         name="cache"
         path="." />
+
 </paths>

@@ -58,6 +58,10 @@ fun AppNavGraph(
             composable(Routes.PROFIT_LOSS) {
                 ProfitLossScreen(navController)
             }
+            composable(Routes.COMPANY_PROFILE) {
+                CompanyProfileScreen(navController)
+            }
+
         }
 
         // ================= WORKERS =================
