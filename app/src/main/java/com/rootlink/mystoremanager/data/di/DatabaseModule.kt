@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.rootlink.mystoremanager.data.database.AppDatabase
 import com.rootlink.mystoremanager.data.dao.*
+import com.rootlink.mystoremanager.data.database.DB_NAME
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,10 +27,12 @@ object DatabaseModule {
         Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            "myStoreManager.db"
+            DB_NAME
         )
             .fallbackToDestructiveMigration(true)
-            .build()
+            .build().also {
+                DatabaseCloser.db = it
+            }
 
     @Provides
     fun provideCompanyProfileDao(db: AppDatabase) : CompanyProfileDao = db.companyProfileDao()

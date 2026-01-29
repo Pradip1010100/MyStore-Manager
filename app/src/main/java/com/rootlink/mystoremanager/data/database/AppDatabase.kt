@@ -1,10 +1,14 @@
 package com.rootlink.mystoremanager.data.database
 
+import android.content.Context
 import androidx.room.Database
+import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.rootlink.mystoremanager.data.dao.*
 import com.rootlink.mystoremanager.data.entity.*
+
+const val DB_NAME = "myStoreManager"
 
 @Database(
     entities = [
@@ -46,6 +50,7 @@ import com.rootlink.mystoremanager.data.entity.*
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun companyProfileDao(): CompanyProfileDao
     // ---------- WORKERS ----------
     abstract fun workerDao(): WorkerDao
