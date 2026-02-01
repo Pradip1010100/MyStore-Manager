@@ -1,71 +1,78 @@
-# 📱 MyStore Manager
+# 📱 MyStore Manager  
 
-**MyStore Manager** is an **offline-first Android application** built to manage **sales, purchases, inventory, workers, accounting, and reports** for small retail businesses — especially **battery shops**.
+**MyStore Manager** is an **offline-first Android application** built to manage **sales, purchases, inventory, workers, accounting, and reports** for small retail businesses — especially **battery shops**.  
 
-The app is designed to be **simple, reliable, and practical**, optimized for **low-end Android devices** and real-world shop workflows.
-
----
-
-## 🎯 Project Objective
-
-To provide a **single Android app** that allows a shop owner to:
-
-- Manage **products and stock**
-- Handle **battery sales with old battery exchange**
-- Record **purchases and supplier dues**
-- Track **worker salaries and advances**
-- Maintain **accurate accounting**
-- View **business reports**
-- Work **100% offline**
+The app is designed to be **simple, reliable, and practical**, optimized for **low-end Android devices** and real-world shop workflows.  
 
 ---
 
-## ✨ Key Features
+## 🎯 Project Objective  
 
-### 👷 Worker Management
+To provide a **single Android app** that allows a shop owner to:  
+
+- Manage **products and stock**  
+- Handle **battery sales with old battery exchange**  
+- Record **purchases and supplier dues**  
+- Track **worker salaries and advances**  
+- Maintain **accurate accounting**  
+- View **business reports**  
+- Work **100% offline with backup & restore support**  
+
+---
+
+## ✨ Key Features  
+
+### 👷 Worker Management  
 - Add, update, deactivate workers  
 - Record salary & advance payments  
 - Worker ledger tracking  
 - Automatic accounting entry for every payment  
 
-### 📦 Product & Inventory Management
-- Multiple product categories (Battery, UPS, Inverter, Accessories, Services)
-- Add & update products
-- Real-time stock tracking
-- Manual stock adjustment with reason & audit trail
-- Low-stock visibility
+### 📦 Product & Inventory Management  
+- Multiple product categories (Battery, UPS, Inverter, Accessories, Services)  
+- Add & update products  
+- Real-time stock tracking  
+- Manual stock adjustment with reason & audit trail  
+- Low-stock visibility  
 
-### 🧾 Sales & Billing
-- Multi-product sales
-- Old battery exchange (battery products only)
-- Automatic bill calculation
-- Cash / UPI / Credit payments
-- Invoice generation & sharing
-- Accurate stock deduction
+### 🧾 Sales & Billing  
+- Multi-product sales  
+- Old battery exchange (battery products only)  
+- Automatic bill calculation  
+- Cash / UPI / Credit payments  
+- Invoice generation & sharing  
+- Accurate stock deduction  
 
-### 🏭 Purchase & Supplier Management
-- Supplier management
-- Cash, partial, and credit purchases
-- Supplier due tracking
-- Automatic stock increment
-- Conditional accounting entry
+### 🏭 Purchase & Supplier Management  
+- Supplier management  
+- Cash, partial, and credit purchases  
+- Supplier due tracking  
+- Automatic stock increment  
+- Conditional accounting entry  
 
-### 💰 Accounting & Transactions
-- Centralized transaction system (IN / OUT)
-- Daily & monthly summaries
-- Profit / loss foundation
-- No missing or duplicate entries
+### 💰 Accounting & Transactions  
+- Centralized transaction system (IN / OUT)  
+- Daily & monthly summaries  
+- Profit / loss foundation  
+- No missing or duplicate entries  
 
-### 📊 Reports
-- Sales reports
-- Stock reports
-- Worker payment reports
-- Purchase reports
-- Old battery collection reports
+### 💾 Backup & Restore  
+- Manual database backup  
+- Backup file stored in **local device storage (File Manager)**  
+- Backup file naming format:
+- Full data restore from backup file  
+- No internet required  
+
+### 📊 Reports  
+- Sales reports  
+- Stock reports  
+- Worker payment reports  
+- Purchase reports  
+- Old battery collection reports  
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack  
 
 | Layer | Technology |
 |-----|-----------|
@@ -75,69 +82,61 @@ To provide a **single Android app** that allows a shop owner to:
 | Database | Room (SQLite) |
 | State | ViewModel + StateFlow |
 | Persistence | Offline-first |
+| Backup | Local database file copy |
 | Build Tool | Gradle |
-| Optional (Future) | Firebase / Cloud Backup |
 
 ---
 
-## 🧱 Architecture Overview
+## 🧱 Architecture Overview  
 
-MyStore Manager strictly follows **Clean MVVM Architecture**:
-
-UI (Compose Screens)  
-↓  
-ViewModel (State & Validation)  
-↓  
-Repository (Business Logic)  
-↓  
-DAO (Room)  
-↓  
-SQLite Database  
-
-### Architecture Rules
-- UI never accesses the database directly
-- ViewModel never talks to DAO
-- Repository owns all business logic
-- All money movements go through `Transaction`
+MyStore Manager follows **Clean MVVM Architecture**:
+### Architecture Rules  
+- UI never accesses the database directly  
+- ViewModel never talks to DAO  
+- Repository owns all business logic  
+- All money movements go through `Transaction`  
 
 ---
 
-## 🗂️ Core Modules
+## 🗂️ Core Modules  
 
-- Sales & Billing
-- Purchases & Suppliers
-- Inventory & Stock
-- Worker Management
-- Accounting
-- Reports
-
----
-
-## 🗄️ Database Design Highlights
-
-- Fully normalized schema
-- Central `Transaction` entity for all financial events
-- Stock stored in a single authoritative table
-- No hard deletes (audit-safe)
-- Append-only accounting records
+- Sales & Billing  
+- Purchases & Suppliers  
+- Inventory & Stock  
+- Worker Management  
+- Accounting  
+- Reports  
+- Backup & Restore  
 
 ---
 
-## 🔁 Development Process
+## 🗄️ Database Design Highlights  
 
-- **Methodology:** Scrum (Lightweight)
-- **Sprint Length:** 2 weeks
-- **Delivery:** Incremental working APK
-
-### Definition of Done
-- Works offline
-- Data persists after restart
-- No crash on low-end devices
-- Verified on real Android phone
+- Fully normalized schema  
+- Central `Transaction` entity for all financial events  
+- Stock stored in a single authoritative table  
+- No hard deletes (audit-safe)  
+- Append-only accounting records  
 
 ---
 
-## 📦 Sprint Overview
+## 🔁 Development Process  
+
+- **Methodology:** Scrum (Lightweight)  
+- **Sprint Length:** 2 weeks  
+- **Delivery:** Incremental working APK  
+
+### Definition of Done  
+- Works offline  
+- Data persists after restart  
+- Backup file generated correctly  
+- Restore works without data loss  
+- No crash on low-end devices  
+- Verified on real Android phone  
+
+---
+
+## 📦 Sprint Overview  
 
 1. Sprint 0 – Requirements, UML, Architecture  
 2. Sprint 1 – App setup, Room DB, Workers & Products  
@@ -145,92 +144,98 @@ SQLite Database
 4. Sprint 3 – Purchases & Inventory  
 5. Sprint 4 – Worker Payments & Accounting  
 6. Sprint 5 – Reports  
-7. Sprint 6 – Polish & Release  
+7. Sprint 6 – Backup, Restore & Final Release  
 
 ---
 
-## 📱 Offline-First Design
+## 📱 Offline-First Design  
 
-- Fully functional without internet
-- Local Room database
-- No server dependency
-- Optional cloud backup planned
-
----
-
-## 🔐 Data Integrity Rules
-
-- Stock never goes negative
-- Transactions are immutable
-- Corrections use reversal entries
-- Accounting is the single source of truth
-- No silent data manipulation
+- Fully functional without internet  
+- Local Room database  
+- Manual local backup  
+- Restore from File Manager  
+- No server dependency  
 
 ---
 
-## 🧪 Testing Strategy
+## 🔐 Data Integrity Rules  
 
-- Manual testing on real devices
-- Focus on:
-  - Stock accuracy
-  - Accounting correctness
-  - Crash-free operation
-  - Real business scenarios
-
----
-
-## 📄 Documentation
-
-- UML Diagrams (Use Case, ER, Class, Sequence, Statechart, Component, Deployment)
-- Database schema
-- Business rules
-- Sprint plan
-- Workflow definitions
+- Stock never goes negative  
+- Transactions are immutable  
+- Corrections use reversal entries  
+- Accounting is the single source of truth  
+- Backup & restore do not modify history  
+- No silent data manipulation  
 
 ---
 
-## 📦 Deliverables
+## 🧪 Testing Strategy  
 
-- Android source code (Kotlin)
-- APK / AAB
-- Database design
-- UML diagrams
-- User documentation
-- Release notes
-
----
-
-## 🔮 Future Enhancements
-
-- Cloud backup & restore
-- Multi-device sync
-- User authentication
-- GST / tax support
-- Barcode scanning
-- Advanced reporting
+- Manual testing on real devices  
+- Focus on:  
+  - Stock accuracy  
+  - Accounting correctness  
+  - Backup creation  
+  - Restore correctness  
+  - Crash-free operation  
+  - Real business scenarios  
 
 ---
 
-## 👤 Target Users
+## 📄 Documentation  
 
-- Small retail shop owners
-- Battery shops
-- Electrical / hardware stores
-- Offline-first business users
-
----
-
-## 📜 License
-
-This project is **private / client-owned** unless stated otherwise.
+- UML Diagrams (Use Case, ER, Class, Sequence, Statechart, Component, Deployment)  
+- Database schema  
+- Business rules  
+- Sprint plan  
+- Workflow definitions  
 
 ---
 
-## ✅ Project Status
+## 📦 Deliverables  
 
-- Architecture & UML: **Completed**
-- Development: **Completed**
-- Production Ready Target: **Sprint 6**
+- Android source code (Kotlin)  
+- APK / AAB  
+- Backup `.db` file  
+- Database design  
+- UML diagrams  
+- User documentation  
+- Release notes  
+
+---
+
+## 🔮 Future Enhancements  
+
+- Optional cloud sync  
+- Multi-device sync  
+- User authentication  
+- GST / tax support  
+- Barcode scanning  
+- Advanced reporting  
+
+---
+
+## 👤 Target Users  
+
+- Small retail shop owners  
+- Battery shops  
+- Electrical / hardware stores  
+- Offline-first business users  
+
+---
+
+## 📜 License  
+
+This project is **private / client-owned** unless stated otherwise.  
+
+---
+
+## ✅ Project Status  
+
+- Architecture & UML: **Completed**  
+- Development: **Completed**  
+- Backup & Restore: **Implemented**  
+- Production Ready Target: **Sprint 6**  
 
 ---
 
