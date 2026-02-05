@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.rootlink.mystoremanager.data.entity.ProductCategoryEntity
+import com.rootlink.mystoremanager.data.entity.ProductEntity
 import com.rootlink.mystoremanager.data.enums.ProductStatus
 import com.rootlink.mystoremanager.data.enums.StockAdjustmentType
 import com.rootlink.mystoremanager.ui.viewmodel.InventoryViewModel
@@ -32,10 +34,16 @@ fun ProductInventoryScreen(
     val stockOverview by viewModel.stockOverview.collectAsState()
     val history by viewModel.stockHistory.collectAsState()
     var showConfirm by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+
 
     LaunchedEffect(productId) {
         viewModel.loadStockOverview()
         viewModel.loadStockHistory(productId)
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadCategories()
     }
 
     val stockItem = stockOverview.firstOrNull {
@@ -221,6 +229,14 @@ fun ProductInventoryScreen(
                             Text("Stock OUT")
                         }
                     }
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = stockItem.product.status == ProductStatus.ACTIVE,
+                        onClick = { showEditDialog = true }
+                    ) {
+                        Text("Edit Product")
+                    }
+
 
                     /* -------- ACTIVATE / DEACTIVATE -------- */
 
@@ -316,6 +332,28 @@ fun ProductInventoryScreen(
         )
     }
 
+    if (showEditDialog) {
+        EditProductDialog(
+            product = stockItem?.product,
+            categories = viewModel.categories.collectAsState().value,
+            onDismiss = { showEditDialog = false },
+            onSave = { updated ->
+                viewModel.updateProduct(
+                    productId = productId,
+                    name = updated.name,
+                    categoryId = updated.categoryId,
+                    brand = updated.brand,
+                    unit = updated.unit,
+                    purchasePrice = updated.purchasePrice,
+                    sellingPrice = updated.sellingPrice,
+                    warrantyMonths = updated.warrantyMonths
+                )
+                showEditDialog = false
+            }
+        )
+    }
+
+
 }
 
 /* ---------------- SMALL COMPONENTS ---------------- */
@@ -382,4 +420,144 @@ private fun StockHistoryRow(
             )
         }
     }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditProductDialog(
+    product: ProductEntity?,
+    categories: List<ProductCategoryEntity>,
+    onDismiss: () -> Unit,
+    onSave: (ProductEntity) -> Unit
+) {
+    if (product == null) return
+
+    var name by remember(product.productId) { mutableStateOf(product.name) }
+    var brand by remember(product.productId) { mutableStateOf(product.brand) }
+    var unit by remember(product.productId) { mutableStateOf(product.unit) }
+    var purchasePrice by remember(product.productId) { mutableStateOf(product.purchasePrice.toString()) }
+    var sellingPrice by remember(product.productId) { mutableStateOf(product.sellingPrice.toString()) }
+    var warranty by remember(product.productId) { mutableStateOf(product.warrantyMonths.toString()) }
+    var categoryId by remember(product.productId) { mutableStateOf(product.categoryId) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Product") },
+
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Product Name") },
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = brand,
+                    onValueChange = { brand = it },
+                    label = { Text("Brand") },
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = unit,
+                    onValueChange = { unit = it },
+                    label = { Text("Unit (pcs, kg, etc.)") },
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = purchasePrice,
+                    onValueChange = { purchasePrice = it },
+                    label = { Text("Purchase Price") },
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = sellingPrice,
+                    onValueChange = { sellingPrice = it },
+                    label = { Text("Selling Price") },
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = warranty,
+                    onValueChange = { warranty = it },
+                    label = { Text("Warranty (months)") },
+                    singleLine = true
+                )
+
+                // Category selector (simple & safe)
+                var expanded by remember { mutableStateOf(false) }
+                val selectedCategory =
+                    categories.firstOrNull { it.categoryId == categoryId }?.name ?: "Select Category"
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded }
+                ) {
+                    OutlinedTextField(
+                        value = selectedCategory,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Category") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded)
+                        },
+                        modifier = Modifier.menuAnchor()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        categories.forEach { category ->
+                            DropdownMenuItem(
+                                text = { Text(category.name) },
+                                onClick = {
+                                    categoryId = category.categoryId
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+
+        confirmButton = {
+            TextButton(
+                enabled = name.isNotBlank()
+                        && purchasePrice.toDoubleOrNull() != null
+                        && sellingPrice.toDoubleOrNull() != null
+                        && warranty.toIntOrNull() != null,
+                onClick = {
+                    onSave(
+                        product.copy(
+                            name = name.trim(),
+                            brand = brand.trim(),
+                            unit = unit.trim(),
+                            purchasePrice = purchasePrice.toDouble(),
+                            sellingPrice = sellingPrice.toDouble(),
+                            warrantyMonths = warranty.toInt(),
+                            categoryId = categoryId
+                        )
+                    )
+                }
+            ) {
+                Text("Save")
+            }
+        },
+
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

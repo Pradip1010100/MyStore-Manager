@@ -84,6 +84,31 @@ class InventoryViewModel @Inject constructor(
         )
         loadProducts()
     }
+    fun updateProduct(
+        productId: Long,
+        name: String,
+        categoryId: Long,
+        brand: String,
+        unit: String,
+        purchasePrice: Double,
+        sellingPrice: Double,
+        warrantyMonths: Int
+    ) = viewModelScope.launch {
+
+        repository.updateProduct(
+            productId = productId,
+            name = name,
+            categoryId = categoryId,
+            brand = brand,
+            unit = unit,
+            purchasePrice = purchasePrice,
+            sellingPrice = sellingPrice,
+            warrantyMonths = warrantyMonths
+        )
+
+        loadProducts()
+        loadStockOverview()
+    }
 
     /* ---------- STOCK ---------- */
     private val _stockOverview =

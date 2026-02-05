@@ -15,6 +15,28 @@ interface ProductDao {
     @Update
     suspend fun update(product: ProductEntity)
 
+    @Query("""
+    UPDATE products SET
+        name = :name,
+        categoryId = :categoryId,
+        brand = :brand,
+        unit = :unit,
+        purchasePrice = :purchasePrice,
+        sellingPrice = :sellingPrice,
+        warrantyMonths = :warrantyMonths
+    WHERE productId = :productId
+""")
+    suspend fun updateProduct(
+        productId: Long,
+        name: String,
+        categoryId: Long,
+        brand: String,
+        unit: String,
+        purchasePrice: Double,
+        sellingPrice: Double,
+        warrantyMonths: Int
+    )
+
     @Query("UPDATE products SET status = 'INACTIVE' WHERE productId = :id")
     suspend fun deactivate(id: Long)
 
